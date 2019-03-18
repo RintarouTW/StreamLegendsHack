@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+div {
+  width : 200px;
+  padding: 10px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #efefef;
+}
+
+.btn{
+    border: 1px solid #1a1a1a;
+    display: inline-block;
+    padding: 3px;
+    position: relative;
+    text-align: center;
+    transition: background 600ms ease, color 600ms ease;
+}
+
+.installBtn {
+    width: 100px;
+    border: 1px solid #1a1a1a;
+    display: inline-block;
+    padding: 10px 10px 10px 10px;
+    margin-top: 15px;
+    position: relative;
+    left: 100px;
+    text-align: center;
+    transition: background 600ms ease, color 600ms ease;
+}
+
+.installBtn:hover {
+    background: #00b3ff;
+    color:#fff;
+}
+
+label{
+    cursor: pointer;
+    min-width: 60px;
+}
+
+input.toggle {
+    display: none;
+}
+.toggle-left  {
+    border-right: 0;
+}
+.toggle-right {
+    margin-left: -30px;
+}
+:checked + label {
+    cursor: default;
+    background: #00b3ff;
+    color:#fff;
+    transition: color 200ms;
+}
+
+    </style>
+  </head>
+  <body>
+    <div class="box">      
+      <form name="forceLowLevel">
+        <p>Force Low Level</p>
+        <input id="toggle-on" type="radio" name="radios" class="toggle toggle-left" value="YES">
+        <label for="toggle-on" class="btn">Yes</label>
+        <input id="toggle-off" type="radio" name="radios" class="toggle toggle-right" value="NO">
+        <label for="toggle-off" class="btn">No</label>
+      </form>
+
+      <form name="cleanDuplicatedRareItems">
+        <p>Clean Duplicated Rare Items</p>
+        <input id="toggle-on2" type="radio" name="radios2" class="toggle toggle-left" value="YES">
+        <label for="toggle-on2" class="btn">Yes</label>
+        <input id="toggle-off2" type="radio" name="radios2" class="toggle toggle-right" value="NO">
+        <label for="toggle-off2" class="btn">No</label>
+      </form>
+      <br>      
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,49 @@
+<html>
+
+<script src="./moduleTest.js"></script>
+
+<script>
+
+console.log(sessionStorage);
+console.log(localStorage);
+
+var l = 0;
+
+l && console.log("lll");
+
+a = new Promise(function(resolve, reject) {
+	// A mock async action using setTimeout
+	setTimeout(function() { resolve(10); }, 3000);
+});
+
+a.then(function(rsp){
+	console.log("ok");
+}, function(err){
+	console.log("fail");
+});
+
+console.log("goon");
+
+
+// this function will return true after 1 second (see the async keyword in front of function)
+async function returnTrue() {
+  
+  // create a new promise inside of the async function
+  let promise = new Promise((resolve, reject) => {
+    setTimeout(() => resolve(true), 2000) // resolve
+  });
+  
+  // wait for the promise to resolve
+  let result = await promise;
+   
+  // console log the result (true)
+  console.log(result);
+}
+
+// call the function
+returnTrue();
+
+console.log("after return true");
+
+</script>
+</html>
