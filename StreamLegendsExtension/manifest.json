@@ -1,7 +1,7 @@
 {
-  "name": "StreamLegends Hack",
+  "name": "StreamLegends Extension",
   "version": "1.0",
-  "description": "StreamLegends Hack",
+  "description": "Auto fight without waiting, clean duplicated items and auto contribution.",
   "background": {
       "scripts": ["background.js"],
       "persistent": false
