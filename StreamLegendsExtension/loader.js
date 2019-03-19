@@ -1,4 +1,4 @@
-const DEBUG_MODE = false;
+const DEBUG_MODE = true;
 
 /* Update Option to the hack script. */
 function updateOption(name, value) {
@@ -13,7 +13,7 @@ function setup() {
 	/* the hack script would ask to load options after install too */
 	document.addEventListener("LoadOptions", function(evt) {
 
-		chrome.storage.local.get(['forceLowLevel', 'cleanDuplicatedRareItems'], function(data) {
+		chrome.storage.local.get(['forceLowLevel', 'cleanDuplicatedRareItems', 'cleanDuplicatedEpicItems'], function(data) {
 
 			updateOption('forceLowLevel', data.forceLowLevel);
 			updateOption('cleanDuplicatedRareItems', data.cleanDuplicatedRareItems);
