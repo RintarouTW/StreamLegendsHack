@@ -152,7 +152,7 @@ async function cleanItems() {
 	if (!selectItemsByClassName("backpack-item-uncommon", 1)) return;
 
 	if (cleanDuplicatedRareItems && !selectItemsByClassName("backpack-item-rare", 2)) return;
-
+	//if (!selectItemsByClassName("backpack-item-epic", 3)) return;
 	console.info("Totally selected " + numSelectedItem + " items");
 }
 
@@ -320,6 +320,7 @@ const BTN_CLASSNAME_TABLE = [
 	["<FIGHT>", "player-api-btn srpg-button btn btn-default"]
 ];
 
+
 function pressButton(btnIdx) {
 	
 	var btn = GameDoc.getElementsByClassName(BTN_CLASSNAME_TABLE[btnIdx][1])[0];
@@ -366,8 +367,9 @@ function onAutoTimer() {
 
 	if (raidLevel) {
 		isFighting = false;
-		console.log("> Enter Raid");
-		raidLevel.click();		
+		isOnwarding = 0;
+		console.log("> Enter Raid");		
+		raidLevel.click();
 		return;
 	}
 
@@ -377,6 +379,7 @@ function onAutoTimer() {
 
 	if ((!levels.length /* no completed levels, */ || !forceLowLevel) && newLevel) {
 		isFighting = false;
+		isOnwarding = 0;
 		console.log("> Select New Level");
 		newLevel.click();
 		return;
@@ -398,6 +401,7 @@ function onAutoTimer() {
 
 		prevLevel = !prevLevel;
 
+		isOnwarding = 0;
 		levels[lvlIdx].click();
 		return;
 	}
@@ -414,7 +418,7 @@ function onAutoTimer() {
 		if (isOnwarding) { /* server delay */
 			isOnwarding++;
 			console.debug("... Onwarding wait for server(" + isOnwarding + ") ...");
-			if (isOnwarding < 60) return;	// Onwarding timeout
+			if (isOnwarding < 20) return;	// Onwarding timeout
 			stop();
 			window.location.reload();
 		}
