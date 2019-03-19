@@ -25,8 +25,21 @@ function handleCleanDuplicatedRareItems(evt) {
 
 document.getElementsByName("radios2").forEach( function(x) { x.onclick = handleCleanDuplicatedRareItems; });
 
+/* cleanDuplicatedEpicItems */
+
+function handleCleanDuplicatedEpicItems(evt) {
+
+	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+		chrome.storage.local.set({cleanDuplicatedEpicItems: evt.target.value}, function(){});
+		chrome.tabs.sendMessage(tabs[0].id, {cmd : "cleanDuplicatedEpicItems", value: evt.target.value});
+    });
+
+}
+
+document.getElementsByName("radios3").forEach( function(x) { x.onclick = handleCleanDuplicatedEpicItems; });
+
 /* loadOptions */
-chrome.storage.local.get(['forceLowLevel', 'cleanDuplicatedRareItems'], function(data) {
+chrome.storage.local.get(['forceLowLevel', 'cleanDuplicatedRareItems', 'cleanDuplicatedEpicItems'], function(data) {
 
 	if (data.forceLowLevel == "YES") 
 		document.forceLowLevel[0].checked = true;
@@ -37,5 +50,10 @@ chrome.storage.local.get(['forceLowLevel', 'cleanDuplicatedRareItems'], function
 		document.cleanDuplicatedRareItems[0].checked = true;
 	else 
 		document.cleanDuplicatedRareItems[1].checked = true;
+
+	if (data.cleanDuplicatedEpicItems == "YES")
+		document.cleanDuplicatedEpicItems[0].checked = true;
+	else 
+		document.cleanDuplicatedEpicItems[1].checked = true;
 
 });

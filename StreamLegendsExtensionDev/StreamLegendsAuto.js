@@ -14,8 +14,9 @@
 var GameTitle = "StreamLegends";
 
 /* Game Options */
-var forceLowLevel = true;
-var cleanDuplicatedRareItems = true;
+var forceLowLevel = false;
+var cleanDuplicatedRareItems = false;
+var cleanDuplicatedEpicItems = false;
 var autoStart = false;
 var MAX_CLEAN_ITEMS = 100;
 
@@ -49,6 +50,9 @@ document.addEventListener("SetOption", event => {
 		break;
 		case "cleanDuplicatedRareItems":
 			cleanDuplicatedRareItems = (event.detail.value == "YES");
+		break;
+		case "cleanDuplicatedEpicItems":
+			cleanDuplicatedEpicItems = (event.detail.value == "YES");
 		break;
 	}
 });
@@ -113,7 +117,8 @@ function selectItemsByClassName(itemClassName, typeIdx) {
 
 			last_item_name = items[i].className;	/* reserve the last one */
 
-			if (last_item_name.includes("_1h_")) 
+			if (last_item_name.includes("_1h_") && 
+				!last_item_name.includes("backpack-item-item_scifi_1h_portable_black_hole_generator_tier_")) 
 				last_one_hand_item_name = last_item_name;
 
 			continue;
@@ -152,7 +157,8 @@ async function cleanItems() {
 	if (!selectItemsByClassName("backpack-item-uncommon", 1)) return;
 
 	if (cleanDuplicatedRareItems && !selectItemsByClassName("backpack-item-rare", 2)) return;
-	//if (!selectItemsByClassName("backpack-item-epic", 3)) return;
+	if (cleanDuplicatedEpicItems && !selectItemsByClassName("backpack-item-epic", 3)) return;
+	
 	console.info("Totally selected " + numSelectedItem + " items");
 }
 
@@ -343,7 +349,7 @@ function onAutoTimer() {
 		stop();
 		window.location.reload();
 		return;
-	}
+	}	
 
 	if (isFighting) fightingTicks++;	/* Fighting ticks up */
 

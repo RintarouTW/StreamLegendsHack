@@ -2,7 +2,7 @@
 
 chrome.runtime.onInstalled.addListener(function() {
   // Default Options
-  chrome.storage.local.set( {forceLowLevel: "NO", cleanDuplicatedRareItems: "NO"} );
+  chrome.storage.local.set( {forceLowLevel: "NO", cleanDuplicatedRareItems: "NO", cleanDuplicatedEpicItems: "NO"} );
 
   chrome.declarativeContent.onPageChanged.removeRules(undefined, function() {
       chrome.declarativeContent.onPageChanged.addRules([{

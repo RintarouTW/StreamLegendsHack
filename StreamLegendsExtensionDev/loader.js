@@ -17,6 +17,7 @@ function setup() {
 
 			updateOption('forceLowLevel', data.forceLowLevel);
 			updateOption('cleanDuplicatedRareItems', data.cleanDuplicatedRareItems);
+			updateOption('cleanDuplicatedEpicItems', data.cleanDuplicatedEpicItems);
 
 		});
 
