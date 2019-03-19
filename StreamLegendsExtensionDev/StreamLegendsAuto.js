@@ -349,7 +349,7 @@ function onAutoTimer() {
 		stop();
 		window.location.reload();
 		return;
-	}	
+	}
 
 	if (isFighting) fightingTicks++;	/* Fighting ticks up */
 
@@ -357,7 +357,8 @@ function onAutoTimer() {
 
 	if (isFighting) { /* Fight ends */
 
-		if (fightTab.className.includes('fight-ready')) return; /* Prevent Network Delay */
+		if (fightTab.className.includes('fight-ready') && 
+			!GameDoc.getElementsByClassName("StreamRpgMapList")[0]) return; /* Prevent Network Delay */
 			
 		totalFightingTicks += fightingTicks;
 		console.log("Fight ends in " + fightingTicks + " / " + totalFightingTicks + " seconds");
