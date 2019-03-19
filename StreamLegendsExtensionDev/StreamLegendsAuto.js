@@ -95,7 +95,7 @@ function overMaxSelected() {
 
 function selectItemsByClassName(itemClassName, typeIdx) {
 
-	var j = 0, last_item_name = "";
+	var j = 0, last_item_name = "", last_one_hand_item_name = "";
 
 	var itemTypes = ["common", "uncommon", "rare", "epic"];
 
@@ -112,8 +112,21 @@ function selectItemsByClassName(itemClassName, typeIdx) {
 		if(last_item_name != items[i].className) {
 
 			last_item_name = items[i].className;	/* reserve the last one */
+
+			if (last_item_name.includes("_1h_")) 
+				last_one_hand_item_name = last_item_name;
+
 			continue;
-		}			
+
+		} else {
+
+			/* reserver another one hand item again */
+			if ((last_one_hand_item_name != "") && 
+				(items[i].className == last_one_hand_item_name)) {
+					last_one_hand_item_name = "";
+					continue;
+			}
+		}
 
 		items[i].click();
 		numSelectedItem++;
