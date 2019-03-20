@@ -220,6 +220,8 @@ function installHooks() {
 		
 			var deleteBar = GameDoc.getElementsByClassName("srpg-gear-multi-delete-bar")[0];
 
+			if (deleteBar.children.length > 1) return;
+
 			cleanBtn = document.createElement("li");
 			cleanBtn.className = "srpg-gear-multi-delete-button";
 			cleanBtn.innerHTML = "<a><div>CLEAN</div><i class='fa fa-trash-o'></i></a>";
@@ -440,11 +442,17 @@ function onAutoTimer() {
 
 	} else {
 		/* TODO, this may loop too */
-		if (pressButton(BTN_ONWARDS_CONTINUE)) return;
+		if (pressButton(BTN_ONWARDS_CONTINUE)) {
+			isOnwarding++;
+			return;
+		}
 	}
 
 	/* ONWARDS Button with COMBAT LOG only */
-	if (pressButton(BTN_ONWARDS_COMBATLOG)) return;
+	if (pressButton(BTN_ONWARDS_COMBATLOG)) {
+		isOnwarding++;
+		return;
+	}
 
 	/* Fight Button */
 	if (pressButton(BTN_FIGHT)) {
