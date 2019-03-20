@@ -1,4 +1,4 @@
-const DEBUG_MODE = true;
+const DEBUG_MODE = false;
 
 /* Update Option to the hack script. */
 function updateOption(name, value) {
