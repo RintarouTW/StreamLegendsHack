@@ -33,7 +33,6 @@ var guildTimer;
 var fightRounds;
 
 /* Statistics */
-var isFighting = false;
 var isOnwarding = 0;
 var fightingTicks = 0;	/* num seconds of the last fight */
 var totalFightingTicks = 0;
@@ -76,7 +75,6 @@ function start() {
 	numItems  = 0;
 	fightingTicks = 0;
 	totalFightingTicks = 0;
-	isFighting = false;
 	isOnwarding = 0;
 
 	if (autoTimer) stop();
@@ -344,20 +342,14 @@ function pressButton(btnIdx) {
 	
 	if (!btn) return false; // button not found
 
+	// button is buzy awaiting request.
+	if(btn.className.includes("srpg-awaiting-request-spinner")) return false;
+
 	btn.click();
 
 	console.log(BTN_CLASSNAME_TABLE[btnIdx][0]);	// Log it.
 
 	return true;	// pressed
-}
-
-
-function failSave() {
-
-	console.debug("Network delay??? try fail save!");
-	pressButton(BTN_FIGHT);
-	pressButton(BTN_ONWARDS_NEW_ITEM);
-	pressButton(BTN_ONWARDS_CONTINUE);
 }
 
 
@@ -372,137 +364,105 @@ function onAutoTimer() {
 		return;
 	}
 
-	if (isFighting) fightingTicks++;	/* Fighting ticks up */
+	if (fightTab.className.includes("fight-active")) {
+		fightingTicks++;
+		return;
+	}
 
-	if (fightTab.className.includes('fight-active')) return; /* still fighting */
+	if (fightTab.className.includes("unclaimed-reward")) {
 
-	if (isFighting) { /* Fight ends */
-
-		if (fightTab.className.includes('fight-ready') && 
-			!GameDoc.getElementsByClassName("StreamRpgMapList")[0]) {			
-
-			// some wierd errors, such as
-			// 1. Fight button didn't get clicked.
-			// 2. 
-			if (fightingTicks % 4 == 0) failSave();
-
-			if (fightingTicks > 30) window.location.reload();	// fail save failed, just reload.
-			return; /* Prevent Network Delay */
+		// end fighting
+		if (fightingTicks > 0) {
+			totalFightingTicks += fightingTicks;
+			console.log("Fight ends in " + fightingTicks + " / " + totalFightingTicks + " seconds");
+			fightingTicks = 0;	/* reset ticks */
 		}
-			
-		totalFightingTicks += fightingTicks;
-		console.log("Fight ends in " + fightingTicks + " / " + totalFightingTicks + " seconds");
-		fightingTicks = 0;	/* reset ticks */
-		isFighting = false;
+
+		isOnwarding++;
+
+		if (isOnwarding > 30) window.location.reload(); // timeout
+
+		if (GameDoc.getElementsByClassName("srpg-button-secondary")[0]) {
+
+			/* COLLECT LOOT */
+			if (pressButton(BTN_COLLECT_LOOT)) return;
+
+			/* ONWARDS Button when got new item, special case */
+			if (pressButton(BTN_ONWARDS_NEW_ITEM)) {			
+				numItems++;
+				console.log("Got ( " + numItems + " ) New Items");
+				return;
+			}
+
+			/* ONWARDS Button with COMBAT LOG only */
+			if (pressButton(BTN_ONWARDS_COMBATLOG)) return;
+
+		} else {
+
+			if (pressButton(BTN_ONWARDS_CONTINUE)) return;
+		}
+
+		return;
 	}
 
 	/* Automation only works when the Fight tab is selected, leave other tabs work as normal */		
 	if (!fightTab.className.includes('nav-selected')) return;
 
-	/* Level Selection (Raid > forceLowLevel > newLevel > highest 2 levels) */
-	var raidLevel = GameDoc.getElementsByClassName("map-raid")[0];
+	if (fightTab.className.includes("fight-ready")) {
 
-	if (raidLevel) {
-		isFighting = false;
 		isOnwarding = 0;
-		console.log("> Enter Raid");		
-		raidLevel.click();
-		return;
-	}
 
-	var newLevel = GameDoc.getElementsByClassName("map-selected")[0];
+		/* Level Selection (Raid > forceLowLevel > newLevel > highest 2 levels) */
+		var raidLevel = GameDoc.getElementsByClassName("map-raid")[0];
 
-	var levels = GameDoc.getElementsByClassName("map-completed");
-
-	if ((!levels.length /* no completed levels, */ || !forceLowLevel) && newLevel) {
-		isFighting = false;
-		isOnwarding = 0;
-		console.log("> Select New Level");
-		newLevel.click();
-		return;
-	}
-	
-	if (levels.length) {
-
-		isFighting = false;
-
-		if (forceLowLevel) {
-			console.log("> Force Low Level");
-			levels[0].click();
+		if (raidLevel) {
+			console.log("> Enter Raid");
+			raidLevel.click();
 			return;
 		}
 
-		var lvlIdx = (prevLevel) ? (levels.length - 1) : (levels.length - 2);
+		var newLevel = GameDoc.getElementsByClassName("map-selected")[0];
 
-		console.log("> Select Level item[" + lvlIdx + "]");
+		var levels = GameDoc.getElementsByClassName("map-completed");
 
-		prevLevel = !prevLevel;
+		if ((!levels.length /* no completed levels, */ || !forceLowLevel) && newLevel) {
+			console.log("> Select New Level");
+			newLevel.click();
+			return;
+		}
+		
+		if (levels.length) {
 
-		isOnwarding = 0;
-		levels[lvlIdx].click();
-		return;
-	}
-
-	/* COLLECT LOOT */
-	if (pressButton(BTN_COLLECT_LOOT)) return;
-
-	/* Raid Back to Map */
-	if (pressButton(BTN_RAID_BACK_TO_MAP)) return;
-
-
-	if (GameDoc.getElementsByClassName("srpg-button-secondary")[0]) {
-
-		if (isOnwarding) { /* server delay */
-			isOnwarding++;
-			console.debug("... Onwarding wait for server(" + isOnwarding + ") ...");
-
-			if (isOnwarding < 4) return;
-
-			if (isOnwarding % 4 == 0) {
-				pressButton(BTN_ONWARDS_NEW_ITEM);
-			}
-
-			if (isOnwarding > 30) {
-				stop();
-				window.location.reload();
+			if (forceLowLevel) {
+				console.log("> Force Low Level");				
+				levels[0].click();
 				return;
 			}
+
+			var lvlIdx = (prevLevel) ? (levels.length - 1) : (levels.length - 2);
+
+			console.log("> Select Level item[" + lvlIdx + "]");
+
+			prevLevel = !prevLevel;
+
+			levels[lvlIdx].click();
 			return;
 		}
 
-		/* ONWARDS Button when got new item, special case */
-		if (pressButton(BTN_ONWARDS_NEW_ITEM)) {			
-			numItems++;
-			isOnwarding = 0; // reset onwarding timer.
-			console.log("Got ( " + numItems + " ) New Items");
-			isOnwarding++;
+		if (pressButton(BTN_RAID_BACK_TO_MAP)) return;
+
+		// click FIGHT!
+		if (pressButton(BTN_FIGHT)) {
+
+			numFights++;
+			fightRounds.innerHTML = numFights;
+			console.log("Round -< " + numFights + " >-");
 			return;
 		}
 
-	} else {
-		/* TODO, this may loop too */
-		if (pressButton(BTN_ONWARDS_CONTINUE)) {
-			isOnwarding++;
-			return;
-		}
-	}
-
-	/* ONWARDS Button with COMBAT LOG only */
-	if (pressButton(BTN_ONWARDS_COMBATLOG)) {
-		isOnwarding++;
 		return;
 	}
 
-	/* Fight Button */
-	if (pressButton(BTN_FIGHT)) {
-
-		isFighting = true;
-		isOnwarding = 0;
-		numFights++;
-		fightRounds.innerHTML = numFights;
-		console.log("Round -< " + numFights + " >-");
-		return;
-	}
 }
 
 function RetryInstallWhileGameLoading() {
