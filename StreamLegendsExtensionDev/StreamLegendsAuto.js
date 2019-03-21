@@ -347,6 +347,15 @@ function pressButton(btnIdx) {
 }
 
 
+function failSave() {
+
+	console.debug("Network delay??? try fail save!");
+	pressButton(BTN_FIGHT);
+	pressButton(BTN_ONWARDS_NEW_ITEM);
+	pressButton(BTN_ONWARDS_CONTINUE);
+}
+
+
 function onAutoTimer() {
 
 	/* ONWARDS Button when Errors : Fail safe - reload & auto start */
@@ -367,15 +376,10 @@ function onAutoTimer() {
 		if (fightTab.className.includes('fight-ready') && 
 			!GameDoc.getElementsByClassName("StreamRpgMapList")[0]) {			
 
-			// some wierd errors, like 
+			// some wierd errors, such as
 			// 1. Fight button didn't get clicked.
 			// 2. 
-			if ((fightingTicks % 4) == 0) {
-				console.log("Network delay??? try fail save!");
-				pressButton(BTN_FIGHT);
-				pressButton(BTN_ONWARDS_NEW_ITEM);
-				pressButton(BTN_ONWARDS_CONTINUE);
-			}
+			if ((fightingTicks % 4) == 0) failSave();
 
 			if (fightingTicks > 30) window.location.reload();	// fail save failed, just reload.
 			return; /* Prevent Network Delay */
@@ -446,13 +450,16 @@ function onAutoTimer() {
 		if (isOnwarding) { /* server delay */
 			isOnwarding++;
 			console.debug("... Onwarding wait for server(" + isOnwarding + ") ...");
-			if (isOnwarding < 20) return;	// Onwarding timeout
+
+			if (fightingTicks < 4) return;
 
 			if (isOnwarding > 60) {
 				stop();
 				window.location.reload();
 				return;
 			}
+
+			return;
 		}
 
 		/* ONWARDS Button when got new item, special case */
