@@ -333,6 +333,7 @@ const BTN_CLASSNAME_TABLE = [
 	["<ONWARDS> Errors", "srpg-button srpg-button-continue btn btn-default"],
 	["<ONWARDS> EQUIP", "player-api-btn srpg-button srpg-button-continue btn btn-default"],
 	["<ONWARD> Continue", "player-api-btn srpg-button srpg-button-continue btn btn-default"],
+
 	["<ONWARDS> COMBAT LOG", "player-api-btn srpg-button available post-fight-button btn btn-default"],
 	["<FIGHT>", "player-api-btn srpg-button btn btn-default"]
 ];
@@ -384,7 +385,7 @@ function onAutoTimer() {
 			// some wierd errors, such as
 			// 1. Fight button didn't get clicked.
 			// 2. 
-			if ((fightingTicks % 4) == 0) failSave();
+			if (fightingTicks % 4 == 0) failSave();
 
 			if (fightingTicks > 30) window.location.reload();	// fail save failed, just reload.
 			return; /* Prevent Network Delay */
@@ -458,12 +459,13 @@ function onAutoTimer() {
 
 			if (isOnwarding < 4) return;
 
-			if (isOnwarding > 60) {
+			if (isOnwarding % 4 == 0) failSave();
+
+			if (isOnwarding > 30) {
 				stop();
 				window.location.reload();
 				return;
 			}
-
 			return;
 		}
 
