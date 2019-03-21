@@ -27,7 +27,6 @@ var fightTab;
 var gearTab;
 var autoToggle;
 var numSelectedItem = 0;
-var installRetried = 0;
 var prevLevel = false;
 var cleanBtn;
 var guildTimer;
@@ -186,6 +185,11 @@ function autoContribute() {
 
 function installHooks() {
 
+	if (GameDoc.getElementsByClassName("StreamRpgError srpg-takeover-window")[0]) {
+		window.location.reload();
+		return;
+	}
+
 	fightTab = GameDoc.getElementById("srpg-nav-tab-FIGHT");
 
 	if (!fightTab) return false;
@@ -342,6 +346,7 @@ function pressButton(btnIdx) {
 	return true;	// pressed
 }
 
+
 function onAutoTimer() {
 
 	/* ONWARDS Button when Errors : Fail safe - reload & auto start */
@@ -360,7 +365,21 @@ function onAutoTimer() {
 	if (isFighting) { /* Fight ends */
 
 		if (fightTab.className.includes('fight-ready') && 
-			!GameDoc.getElementsByClassName("StreamRpgMapList")[0]) return; /* Prevent Network Delay */
+			!GameDoc.getElementsByClassName("StreamRpgMapList")[0]) {			
+
+			// some wierd errors, like 
+			// 1. Fight button didn't get clicked.
+			// 2. 
+			if ((fightingTicks % 4) == 0) {
+				console.log("Network delay??? try fail save!");
+				pressButton(BTN_FIGHT);
+				pressButton(BTN_ONWARDS_NEW_ITEM);
+				pressButton(BTN_ONWARDS_CONTINUE);
+			}
+
+			if (fightingTicks > 30) window.location.reload();	// fail save failed, just reload.
+			return; /* Prevent Network Delay */
+		}
 			
 		totalFightingTicks += fightingTicks;
 		console.log("Fight ends in " + fightingTicks + " / " + totalFightingTicks + " seconds");
@@ -428,13 +447,18 @@ function onAutoTimer() {
 			isOnwarding++;
 			console.debug("... Onwarding wait for server(" + isOnwarding + ") ...");
 			if (isOnwarding < 20) return;	// Onwarding timeout
-			stop();
-			window.location.reload();
+
+			if (isOnwarding > 60) {
+				stop();
+				window.location.reload();
+				return;
+			}
 		}
 
 		/* ONWARDS Button when got new item, special case */
 		if (pressButton(BTN_ONWARDS_NEW_ITEM)) {			
 			numItems++;
+			isOnwarding = 0; // reset onwarding timer.
 			console.log("Got ( " + numItems + " ) New Items");
 			isOnwarding++;
 			return;
@@ -468,10 +492,9 @@ function onAutoTimer() {
 
 function RetryInstallWhileGameLoading() {
 
-	if((installRetried++ < 20) && !install())
+	if(!install())
 		setTimeout(RetryInstallWhileGameLoading, 1000);	
-	else 
-		installRetried = 0;
+
 }
 
 // Auto Install
