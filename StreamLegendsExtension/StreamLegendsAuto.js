@@ -190,6 +190,11 @@ function installHooks() {
 		return;
 	}
 
+	if (window.top == window) {	// for debug only.
+		window.resizeTo(320, 620);
+		window.moveTo(0, 0);
+	}
+
 	fightTab = GameDoc.getElementById("srpg-nav-tab-FIGHT");
 
 	if (!fightTab) return false;
@@ -451,7 +456,7 @@ function onAutoTimer() {
 			isOnwarding++;
 			console.debug("... Onwarding wait for server(" + isOnwarding + ") ...");
 
-			if (fightingTicks < 4) return;
+			if (isOnwarding < 4) return;
 
 			if (isOnwarding > 60) {
 				stop();
