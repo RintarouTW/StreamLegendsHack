@@ -17,7 +17,6 @@ var GameTitle = "StreamLegends";
 var forceLowLevel = false;
 var cleanDuplicatedRareItems = false;
 var cleanDuplicatedEpicItems = false;
-var autoStart = false;
 var MAX_CLEAN_ITEMS = 100;
 
 /* Internally Used */
@@ -143,10 +142,8 @@ function selectItemsByClassName(itemClassName, typeIdx) {
 async function cleanItems() {
 
 	var btns = GameDoc.getElementsByClassName("srpg-gear-multi-delete-button");
-
-	if (btns.length == 2 )
-
-		btns[0].firstChild.click();	/* click the SELECT button */
+	
+	if (btns.length == 2) btns[0].firstChild.click();	/* click the SELECT button */
 
 	numSelectedItem = 0;
 
@@ -180,13 +177,24 @@ function autoContribute() {
 
 }
 
+function gotFatalError() {
+
+	/* ONWARDS Button when Errors : Fail safe - reload & auto start */
+	var errorWindow = GameDoc.getElementsByClassName("StreamRpgError srpg-takeover-window")[0];
+
+	if (errorWindow) {
+		stop();
+		console.debug("fatal error window shows, reload the game.");
+		window.location.reload();
+		return true;
+	}
+
+	return false;
+}
 
 function installHooks() {
 
-	if (GameDoc.getElementsByClassName("StreamRpgError srpg-takeover-window")[0]) {
-		window.location.reload();
-		return;
-	}
+	if (gotFatalError()) return false;
 
 	if (window.top == window) {	// for debug only.
 		window.resizeTo(320, 620);
@@ -283,9 +291,7 @@ function installHooks() {
 	console.info("Installed. Enjoy it!");
 
 	// Auto Start
-	autoStart = (sessionStorage.getItem('autoStart') == "YES");
-
-	if (autoStart) autoToggle.click();
+	if (sessionStorage.getItem('autoStart') == "YES") autoToggle.click();
 
 	return true;
 }
@@ -352,17 +358,9 @@ function pressButton(btnIdx) {
 	return true;	// pressed
 }
 
-
 function onAutoTimer() {
 
-	/* ONWARDS Button when Errors : Fail safe - reload & auto start */
-	var errorWindow = GameDoc.getElementsByClassName("StreamRpgError srpg-takeover-window")[0];
-
-	if (errorWindow) {
-		stop();
-		window.location.reload();
-		return;
-	}
+	if (gotFatalError()) return;
 
 	if (fightTab.className.includes("fight-active")) {
 		fightingTicks++;
@@ -378,9 +376,16 @@ function onAutoTimer() {
 			fightingTicks = 0;	/* reset ticks */
 		}
 
+		/* Automation only works when the Fight tab is selected, leave other tabs work as normal */		
+		if (!fightTab.className.includes('nav-selected')) return;
+
 		isOnwarding++;
 
-		if (isOnwarding > 30) window.location.reload(); // timeout
+		if (isOnwarding > 30) {
+			console.debug("onwarding timtout, reload the game.");
+			window.location.reload(); // timeout
+			return;
+		}
 
 		if (GameDoc.getElementsByClassName("srpg-button-secondary")[0]) {
 
@@ -405,12 +410,12 @@ function onAutoTimer() {
 		return;
 	}
 
-	/* Automation only works when the Fight tab is selected, leave other tabs work as normal */		
-	if (!fightTab.className.includes('nav-selected')) return;
-
 	if (fightTab.className.includes("fight-ready")) {
 
 		isOnwarding = 0;
+
+		/* Automation only works when the Fight tab is selected, leave other tabs work as normal */		
+		if (!fightTab.className.includes('nav-selected')) return;
 
 		/* Level Selection (Raid > forceLowLevel > newLevel > highest 2 levels) */
 		var raidLevel = GameDoc.getElementsByClassName("map-raid")[0];
