@@ -11,12 +11,13 @@
 
 'use strict';
 
-var GameTitle = "StreamLegends";
+const GameTitle = "StreamLegends";
 
 /* Game Options */
 var forceLowLevel = false;
 var cleanDuplicatedRareItems = false;
 var cleanDuplicatedEpicItems = false;
+var discardCommonUncommonItems = false;
 var MAX_CLEAN_ITEMS = 100;
 
 /* Internally Used */
@@ -50,6 +51,9 @@ document.addEventListener("SetOption", event => {
 		break;
 		case "cleanDuplicatedEpicItems":
 			cleanDuplicatedEpicItems = (event.detail.value == "YES");
+		break;
+		case "discardCommonUncommonItems":
+			discardCommonUncommonItems = (event.detail.value == "YES");
 		break;
 	}
 });
@@ -341,10 +345,11 @@ const BTN_CLASSNAME_TABLE = [
 	["<FIGHT>", "player-api-btn srpg-button btn btn-default"]
 ];
 
-
 function pressButton(btnIdx) {
 	
-	var btn = GameDoc.getElementsByClassName(BTN_CLASSNAME_TABLE[btnIdx][1])[0];
+	var btn;
+	if (btnIdx == 8) btn = GameDoc.getElementsByClassName(BTN_CLASSNAME_TABLE[btnIdx][1])[3];
+	else btn = GameDoc.getElementsByClassName(BTN_CLASSNAME_TABLE[btnIdx][1])[0];
 	
 	if (!btn) return false; // button not found
 
@@ -358,9 +363,31 @@ function pressButton(btnIdx) {
 	return true;	// pressed
 }
 
+var isRaiding = false;
+var hasRaid = false;
+var xmlhttp;
+var raidSwitchURL = "http://localhost:8000/raid.txt";
+
+function checkNewRaid() {
+
+	if (!isRaiding && !xmlhttp) {
+		xmlhttp = new XMLHttpRequest();			
+		xmlhttp.onreadystatechange = function() {
+			if (this.readyState == 4 && this.status == 200) {
+	    		hasRaid = (this.responseText.replace(/[\n]/g,"") == "YES");
+	    		xmlhttp = 0;
+	    	}
+		};		
+
+		xmlhttp.open("GET", raidSwitchURL, true);
+		xmlhttp.setRequestHeader("Cache-Control", "no-cache");
+		xmlhttp.send();
+	}
+}
+
 function onAutoTimer() {
 
-	if (gotFatalError()) return;
+	if (gotFatalError()) return;	
 
 	if (fightTab.className.includes("fight-active")) {
 		fightingTicks++;
@@ -392,7 +419,7 @@ function onAutoTimer() {
 			/* COLLECT LOOT */
 			if (pressButton(BTN_COLLECT_LOOT)) return;
 
-			/* ONWARDS Button when got new item, special case */
+			/* ONWARDS Button when got new item */
 			if (pressButton(BTN_ONWARDS_NEW_ITEM)) {			
 				numItems++;
 				console.log("Got ( " + numItems + " ) New Items");
@@ -421,9 +448,13 @@ function onAutoTimer() {
 		var raidLevel = GameDoc.getElementsByClassName("map-raid")[0];
 
 		if (raidLevel) {
+			isRaiding = true;
 			console.log("> Enter Raid");
 			raidLevel.click();
 			return;
+		} else {
+			if (GameDoc.getElementsByClassName("srpg-map-list")[0])
+				isRaiding = false;
 		}
 
 		var newLevel = GameDoc.getElementsByClassName("map-selected")[0];
@@ -431,6 +462,7 @@ function onAutoTimer() {
 		var levels = GameDoc.getElementsByClassName("map-completed");
 
 		if ((!levels.length /* no completed levels, */ || !forceLowLevel) && newLevel) {
+			isRaiding = false;
 			console.log("> Select New Level");
 			newLevel.click();
 			return;
@@ -438,7 +470,9 @@ function onAutoTimer() {
 		
 		if (levels.length) {
 
-			if (forceLowLevel) {
+			isRaiding = false;
+
+			if (forceLowLevel) {				
 				console.log("> Force Low Level");				
 				levels[0].click();
 				return;
@@ -455,6 +489,22 @@ function onAutoTimer() {
 		}
 
 		if (pressButton(BTN_RAID_BACK_TO_MAP)) return;
+
+		// Auto Raid for debug only
+		if (!isRaiding) {
+
+			var mapCloseBtn = GameDoc.getElementsByClassName("srpg-map-close")[0];
+
+			if (mapCloseBtn) {
+
+				checkNewRaid(); // only check new raid in the map state.
+
+				if (hasRaid) {
+					mapCloseBtn.click();
+					return;
+				}
+			}
+		}
 
 		// click FIGHT!
 		if (pressButton(BTN_FIGHT)) {
