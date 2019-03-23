@@ -1,5 +1,3 @@
-const DEBUG_MODE = false;
-
 /* Update Option to the hack script. */
 function updateOption(name, value) {
 
@@ -43,13 +41,20 @@ function setup() {
 
 }
 
-if (DEBUG_MODE) {
-	
-	// Insert to the top most frame anyway.
-	if (window.top == window) setup();
+(async () => {
 
-} else {
+	// Default Configuration
+  	const defaultSetting = await import("./default.js");
 
-	if (document.title == "StreamLegends" /* GameTitle */) setup();
+	if (defaultSetting.DebugMode) {
+		
+		// Insert to the top most frame anyway.
+		if (window.top == window) setup();
 
-}
+	} else {
+
+		if (document.title == "StreamLegends" /* GameTitle */) setup();
+
+	}
+})();
+
