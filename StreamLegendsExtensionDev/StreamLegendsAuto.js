@@ -64,7 +64,7 @@ function stop() {
 
 	autoTimer = 0;
 
-	fightRounds.innerHTML = "";
+	if (fightRounds) fightRounds.innerHTML = "";
 
 	if (numFights == 0) return;
 
