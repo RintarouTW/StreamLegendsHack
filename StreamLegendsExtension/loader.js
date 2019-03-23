@@ -46,7 +46,7 @@ function setup() {
 	// Default Configuration
   	const defaultSetting = await import("./default.js");
 
-	if (defaultSetting.DebugMode) {
+	if (defaultSetting.DebugMode == "YES") {
 		
 		// Insert to the top most frame anyway.
 		if (window.top == window) setup();

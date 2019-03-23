@@ -366,11 +366,11 @@ function pressButton(btnIdx) {
 var isRaiding = false;
 var hasRaid = false;
 var xmlhttp;
-var raidSwitchURL = "http://localhost:8000/raid.txt";
+var raidSwitchURL = "http://localhost:8000/raid.txt";	// Auto Raid control server
 
 function checkNewRaid() {
 
-	if (!isRaiding && !xmlhttp) {
+	if (!xmlhttp) { // release mode would only check the first time, and it should fail.
 		xmlhttp = new XMLHttpRequest();			
 		xmlhttp.onreadystatechange = function() {
 			if (this.readyState == 4 && this.status == 200) {
