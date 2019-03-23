@@ -1,12 +1,16 @@
 'use strict';
 
-let defaultSetting = import("./default.js"); // Default Options
-
 chrome.runtime.onInstalled.addListener(function() {
   
-  chrome.storage.local.set( {forceLowLevel: defaultSetting.ForceLowLevel, 
-    cleanDuplicatedRareItems: defaultSetting.CleanDuplicatedRareItems, 
-    cleanDuplicatedEpicItems: defaultSetting.CleanDuplicatedEpicItems} );
+  (async () => {
+    
+    let defaultSetting = await import("./default.js"); // Default Options
+
+    chrome.storage.local.set( {forceLowLevel: defaultSetting.ForceLowLevel, 
+      cleanDuplicatedRareItems: defaultSetting.CleanDuplicatedRareItems, 
+      cleanDuplicatedEpicItems: defaultSetting.CleanDuplicatedEpicItems} );
+
+  })();
 
   chrome.declarativeContent.onPageChanged.removeRules(undefined, function() {
       chrome.declarativeContent.onPageChanged.addRules([{
@@ -28,5 +32,3 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 
   sendResponse("resp");
 });
-
-
