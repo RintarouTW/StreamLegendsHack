@@ -18,9 +18,14 @@ var forceLowLevel = false;
 var cleanDuplicatedRareItems = false;
 var cleanDuplicatedEpicItems = false;
 var discardCommonUncommonItems = false;
+var ignoreRaid = false;
+var enableAutoClean = true;
+var shouldAutoClean = false;
+var numNewItemsToAutoClean = 30;
 var MAX_CLEAN_ITEMS = 100;
 
 /* Internally Used */
+var isReleaseMode = (window.top != window);
 var autoTimer;
 var GameDoc;
 var fightTab;
@@ -37,7 +42,9 @@ var isOnwarding = 0;
 var fightingTicks = 0;	/* num seconds of the last fight */
 var totalFightingTicks = 0;
 var numFights = 0;
-var numItems = 0;
+var numNewItems = 0;
+
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 /* Handle options changed event from content script */
 document.addEventListener("SetOption", event => {
@@ -55,6 +62,8 @@ document.addEventListener("SetOption", event => {
 		case "discardCommonUncommonItems":
 			discardCommonUncommonItems = (event.detail.value == "YES");
 		break;
+		case "enableAutoClean":
+			enableAutoClean = (event.detail.value == "YES");
 	}
 });
 
@@ -69,13 +78,13 @@ function stop() {
 	if (numFights == 0) return;
 
 	console.info("Avg Fight Costs ( " + totalFightingTicks + " / " + numFights + " ) : " + (totalFightingTicks/numFights).toFixed(2) + " seconds");
-	console.info("Avg Drops Per Fight ( " + numItems + " / " + numFights + " ) : " + (numItems * 100 / numFights).toFixed(2) + "%");
+	console.info("Avg Drops Per Fight ( " + numNewItems + " / " + numFights + " ) : " + (numNewItems * 100 / numFights).toFixed(2) + "%");
 }
 
 function start() {
 
 	numFights = 0;
-	numItems  = 0;
+	numNewItems  = 0;
 	fightingTicks = 0;
 	totalFightingTicks = 0;
 	isOnwarding = 0;
@@ -87,7 +96,7 @@ function start() {
 
 function overMaxSelected() {
 
-	if (numSelectedItem > MAX_CLEAN_ITEMS) {
+	if (numSelectedItem >= MAX_CLEAN_ITEMS) {
 
 		console.info(MAX_CLEAN_ITEMS + " max items selected at a time. clean others next time!");
 		numSelectedItem = 0;
@@ -97,7 +106,7 @@ function overMaxSelected() {
 	return false;
 }
 
-function selectItemsByClassName(itemClassName, typeIdx) {
+function selectItemsByClassName(itemClassName, typeIdx, noReserve = false) {
 
 	var j = 0, last_item_name = "", last_one_hand_item_name = "";
 
@@ -111,6 +120,13 @@ function selectItemsByClassName(itemClassName, typeIdx) {
 
 			if (j > 0) console.info("selected " + j + " " + itemTypes[typeIdx] + " items"); 
 			return false; // it's over max, don't continue
+		}
+
+		if (noReserve) {
+			items[i].click();
+			numSelectedItem++;
+			j++;
+			continue;
 		}
 
 		if(last_item_name != items[i].className) {
@@ -138,7 +154,7 @@ function selectItemsByClassName(itemClassName, typeIdx) {
 		j++;
 	}
 
-	if (j > 0) console.info("selected " + j + " " + itemTypes[typeIdx] + " items");
+	if (j > 0) console.info("selected " + j + " / " + items.length + " " + itemTypes[typeIdx] + " items");
 	return true; // it's ok to continue;
 }
 
@@ -151,11 +167,11 @@ async function cleanItems() {
 
 	numSelectedItem = 0;
 
-	if (!selectItemsByClassName("backpack-item-common", 0)) return;
-	if (!selectItemsByClassName("backpack-item-uncommon", 1)) return;
+	if (!selectItemsByClassName("backpack-item-common", 0, discardCommonUncommonItems)) return;
+	if (!selectItemsByClassName("backpack-item-uncommon", 1, discardCommonUncommonItems)) return;
 
-	if (cleanDuplicatedRareItems && !selectItemsByClassName("backpack-item-rare", 2)) return;
-	if (cleanDuplicatedEpicItems && !selectItemsByClassName("backpack-item-epic", 3)) return;
+	if (cleanDuplicatedRareItems && !selectItemsByClassName("backpack-item-rare", 2, false)) return;
+	if (cleanDuplicatedEpicItems && !selectItemsByClassName("backpack-item-epic", 3, false)) return;
 	
 	console.info("Totally selected " + numSelectedItem + " items");
 }
@@ -200,9 +216,9 @@ function installHooks() {
 
 	if (gotFatalError()) return false;
 
-	if (window.top == window) {	// for debug only.
-		window.resizeTo(320, 620);
-		window.moveTo(0, 0);
+	if (!isReleaseMode) {	// for debug only.
+		window.resizeTo(320, 620);		
+		//window.moveTo(0, 0);
 	}
 
 	fightTab = GameDoc.getElementById("srpg-nav-tab-FIGHT");
@@ -235,11 +251,11 @@ function installHooks() {
 		if (GameDoc.getElementsByClassName("srpg-gear-multi-delete-button").length >=2 ) return;
 
 		// Insert Clean Button
-		setTimeout(() => {
+		wait(400).then(() => {
 		
 			var deleteBar = GameDoc.getElementsByClassName("srpg-gear-multi-delete-bar")[0];
 
-			if (deleteBar.children.length > 1) return;
+			if (!deleteBar || deleteBar.children.length > 1) return;
 
 			cleanBtn = document.createElement("li");
 			cleanBtn.className = "srpg-gear-multi-delete-button";
@@ -248,7 +264,7 @@ function installHooks() {
 
 			deleteBar.appendChild(cleanBtn);
 
-		}, 400);		
+		});
 	}
 
 	var orgPopup = GameDoc.getElementsByClassName("srpg-top-bar-popout")[0];
@@ -335,6 +351,7 @@ const BTN_ONWARDS_NEW_ITEM  = 3;
 const BTN_ONWARDS_CONTINUE  = 4;
 const BTN_ONWARDS_COMBATLOG = 5;
 const BTN_FIGHT     		= 6;
+const BTN_SELL_SELECTED		= 7;
 const BTN_CLASSNAME_TABLE = [
 	["<COLLECT LOOT>", "srpg-button available post-fight-button srpg-button-reward btn btn-default"],
 	["<Back To Map>" , "srpg-button srpg-button-maps btn btn-default"],
@@ -342,7 +359,8 @@ const BTN_CLASSNAME_TABLE = [
 	["<ONWARDS> EQUIP", "player-api-btn srpg-button srpg-button-continue btn btn-default"],
 	["<ONWARD> Continue", "player-api-btn srpg-button srpg-button-continue btn btn-default"],
 	["<ONWARDS> COMBAT LOG", "player-api-btn srpg-button available post-fight-button btn btn-default"],
-	["<FIGHT>", "player-api-btn srpg-button btn btn-default"]
+	["<FIGHT>", "player-api-btn srpg-button btn btn-default"],
+	["<Sell Selected>", "player-api-btn  btn btn-default"]
 ];
 
 function pressButton(btnIdx) {
@@ -370,7 +388,7 @@ var raidSwitchURL = "http://localhost:8000/raid.txt";	// Auto Raid control serve
 
 function checkNewRaid() {
 
-	if (!xmlhttp) { // release mode would only check the first time, and it should fail.
+	if (!xmlhttp) {
 		xmlhttp = new XMLHttpRequest();			
 		xmlhttp.onreadystatechange = function() {
 			if (this.readyState == 4 && this.status == 200) {
@@ -385,12 +403,49 @@ function checkNewRaid() {
 	}
 }
 
+function autoClean() {
+
+	console.log(">> Auto Clean");
+	gearTab.click();	
+
+	wait(500).then(() => {
+		
+		cleanItems();
+
+		var btns = GameDoc.getElementsByClassName("srpg-gear-multi-delete-button");
+		
+		if(btns.length >= 2)
+			btns[1].firstChild.click(); // SELL Button
+		else
+			throw new Error("delete buttons not found");
+
+	}).then(() => {
+
+		wait(100).then(pressButton(BTN_SELL_SELECTED));
+
+	}).catch(() => {
+
+		console.debug("delete buttons not found");
+
+	}).then(() => {
+
+		wait(300).then(fightTab.click());
+	});
+
+}
+
 function onAutoTimer() {
 
 	if (gotFatalError()) return;	
 
 	if (fightTab.className.includes("fight-active")) {
 		fightingTicks++;
+
+		if (shouldAutoClean) {
+			shouldAutoClean = false;
+			wait(2000).then(autoClean());
+		}
+
 		return;
 	}
 
@@ -421,8 +476,10 @@ function onAutoTimer() {
 
 			/* ONWARDS Button when got new item */
 			if (pressButton(BTN_ONWARDS_NEW_ITEM)) {			
-				numItems++;
-				console.log("Got ( " + numItems + " ) New Items");
+				numNewItems++;
+				console.log("Got ( " + numNewItems + " ) New Items");
+				if (enableAutoClean && (numNewItems % numNewItemsToAutoClean == 0))
+					shouldAutoClean = true;
 				return;
 			}
 
@@ -444,17 +501,24 @@ function onAutoTimer() {
 		/* Automation only works when the Fight tab is selected, leave other tabs work as normal */		
 		if (!fightTab.className.includes('nav-selected')) return;
 
-		/* Level Selection (Raid > forceLowLevel > newLevel > highest 2 levels) */
-		var raidLevel = GameDoc.getElementsByClassName("map-raid")[0];
+		if (!ignoreRaid) {
+			/* Level Selection (Raid > forceLowLevel > newLevel > highest 2 levels) */
+			var raidLevel = GameDoc.getElementsByClassName("map-raid")[0];
 
-		if (raidLevel) {
-			isRaiding = true;
-			console.log("> Enter Raid");
-			raidLevel.click();
-			return;
-		} else {
-			if (GameDoc.getElementsByClassName("srpg-map-list")[0])
-				isRaiding = false;
+			if (raidLevel) {
+
+				var expireText = GameDoc.getElementsByClassName("srpg-map-list-node-lvl font-medium")[0].innerText;
+
+				isRaiding = true;
+				console.log(">> Enter Raid ( " + expireText + " )");
+				raidLevel.click();
+				return;
+			} else {
+				if (GameDoc.getElementsByClassName("srpg-map-list")[0]) {
+					isRaiding = false;
+					console.log(">> End of Raid");
+				}
+			}
 		}
 
 		var newLevel = GameDoc.getElementsByClassName("map-selected")[0];
@@ -463,7 +527,7 @@ function onAutoTimer() {
 
 		if ((!levels.length /* no completed levels, */ || !forceLowLevel) && newLevel) {
 			isRaiding = false;
-			console.log("> Select New Level");
+			console.log(">> Select New Level");
 			newLevel.click();
 			return;
 		}
@@ -473,14 +537,14 @@ function onAutoTimer() {
 			isRaiding = false;
 
 			if (forceLowLevel) {				
-				console.log("> Force Low Level");				
+				console.log(">> Force Low Level");				
 				levels[0].click();
 				return;
 			}
 
 			var lvlIdx = (prevLevel) ? (levels.length - 1) : (levels.length - 2);
 
-			console.log("> Select Level item[" + lvlIdx + "]");
+			console.log(">> Select Level item[" + lvlIdx + "]");
 
 			prevLevel = !prevLevel;
 
@@ -491,7 +555,7 @@ function onAutoTimer() {
 		if (pressButton(BTN_RAID_BACK_TO_MAP)) return;
 
 		// Auto Raid for debug only
-		if (!isRaiding) {
+		if (!isReleaseMode && !isRaiding) {
 
 			var mapCloseBtn = GameDoc.getElementsByClassName("srpg-map-close")[0];
 
@@ -509,6 +573,9 @@ function onAutoTimer() {
 		// click FIGHT!
 		if (pressButton(BTN_FIGHT)) {
 
+			var raidXP = GameDoc.getElementsByClassName("raid-progress-xp")[0];
+			if (raidXP) console.log("Raid Progress: " + raidXP.innerText);
+
 			numFights++;
 			fightRounds.innerHTML = numFights;
 			console.log("Round -< " + numFights + " >-");
@@ -520,12 +587,9 @@ function onAutoTimer() {
 
 }
 
-function RetryInstallWhileGameLoading() {
+(function RetryInstallWhileGameLoading() {
 
 	if(!install())
-		setTimeout(RetryInstallWhileGameLoading, 1000);	
+		wait(1000).then(RetryInstallWhileGameLoading);
 
-}
-
-// Auto Install
-RetryInstallWhileGameLoading();
+})(); // Auto Install
