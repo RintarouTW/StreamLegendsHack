@@ -11,69 +11,61 @@
 
 'use strict';
 
+import {
+	opt, 
+	checkNewRaid
+} from "./modules/option.js";
+
+import { 
+	isReleaseMode,
+	GameDoc,
+	FightTab,
+	AutoToggle,
+	wait, 
+	updateFightRounds,
+	installHooks,
+	checkFatalError
+} from "./modules/common.js";
+
+import { 
+	BTN_COLLECT_LOOT,
+	BTN_RAID_BACK_TO_MAP,
+	BTN_ONWARDS_FAIL_SAVE,
+	BTN_ONWARDS_NEW_ITEM,
+	BTN_ONWARDS_CONTINUE,
+	BTN_ONWARDS_COMBATLOG,
+	BTN_FIGHT,
+	BTN_SELL_SELECTED,
+	clickButton
+} from "./modules/button.js";
+
+import { 
+	cleanItems, 
+	autoClean 
+} from "./modules/clean.js";
+
 const GameTitle = "StreamLegends";
 
-/* Game Options */
-var forceLowLevel = false;
-var cleanDuplicatedRareItems = false;
-var cleanDuplicatedEpicItems = false;
-var discardCommonUncommonItems = false;
-var ignoreRaid = false;
-var enableAutoClean = true;
-var shouldAutoClean = false;
-var numNewItemsToAutoClean = 30;
-var MAX_CLEAN_ITEMS = 100;
-
-/* Internally Used */
-var isReleaseMode = (window.top != window);
 var autoTimer;
-var GameDoc;
-var fightTab;
-var gearTab;
-var autoToggle;
-var numSelectedItem = 0;
 var prevLevel = false;
-var cleanBtn;
-var guildTimer;
-var fightRounds;
+var shouldAutoClean = false;
+
+var isRaiding = false;
+var isOnwarding = 0;
 
 /* Statistics */
-var isOnwarding = 0;
 var fightingTicks = 0;	/* num seconds of the last fight */
 var totalFightingTicks = 0;
 var numFights = 0;
 var numNewItems = 0;
 
-const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+function stopAutoTimer() {
 
-/* Handle options changed event from content script */
-document.addEventListener("SetOption", event => {
-
-	switch(event.detail.optionName) {
-		case "forceLowLevel":
-			forceLowLevel = (event.detail.value == "YES");
-		break;
-		case "cleanDuplicatedRareItems":
-			cleanDuplicatedRareItems = (event.detail.value == "YES");
-		break;
-		case "cleanDuplicatedEpicItems":
-			cleanDuplicatedEpicItems = (event.detail.value == "YES");
-		break;
-		case "discardCommonUncommonItems":
-			discardCommonUncommonItems = (event.detail.value == "YES");
-		break;
-		case "enableAutoClean":
-			enableAutoClean = (event.detail.value == "YES");
-	}
-});
-
-function stop() {
-
-	clearInterval(autoTimer);
-
+	if (autoTimer) clearInterval(autoTimer);
+	
 	autoTimer = 0;
 
-	if (fightRounds) fightRounds.innerHTML = "";
+	updateFightRounds("");
 
 	if (numFights == 0) return;
 
@@ -81,7 +73,9 @@ function stop() {
 	console.info("Avg Drops Per Fight ( " + numNewItems + " / " + numFights + " ) : " + (numNewItems * 100 / numFights).toFixed(2) + "%");
 }
 
-function start() {
+function startAutoTimer() {
+
+	if (autoTimer) stop();
 
 	numFights = 0;
 	numNewItems  = 0;
@@ -89,367 +83,55 @@ function start() {
 	totalFightingTicks = 0;
 	isOnwarding = 0;
 
-	if (autoTimer) stop();
-
 	autoTimer = setInterval(onAutoTimer, 1000);
-}
-
-function overMaxSelected() {
-
-	if (numSelectedItem >= MAX_CLEAN_ITEMS) {
-
-		console.info(MAX_CLEAN_ITEMS + " max items selected at a time. clean others next time!");
-		numSelectedItem = 0;
-		return true;
-	}
-		
-	return false;
-}
-
-function selectItemsByClassName(itemClassName, typeIdx, noReserve = false) {
-
-	var j = 0, last_item_name = "", last_one_hand_item_name = "";
-
-	var itemTypes = ["common", "uncommon", "rare", "epic"];
-
-	var items = GameDoc.getElementsByClassName(itemClassName);
-
-	for(var i = items.length - 1; i >= 0 ; i--) {
-
-		if (overMaxSelected()) {
-
-			if (j > 0) console.info("selected " + j + " " + itemTypes[typeIdx] + " items"); 
-			return false; // it's over max, don't continue
-		}
-
-		if (noReserve) {
-			items[i].click();
-			numSelectedItem++;
-			j++;
-			continue;
-		}
-
-		if(last_item_name != items[i].className) {
-
-			last_item_name = items[i].className;	/* reserve the last one */
-
-			if (last_item_name.includes("_1h_") && 
-				!last_item_name.includes("backpack-item-item_scifi_1h_portable_black_hole_generator_tier_")) 
-				last_one_hand_item_name = last_item_name;
-
-			continue;
-
-		} else {
-
-			/* reserver another one hand item again */
-			if ((last_one_hand_item_name != "") && 
-				(items[i].className == last_one_hand_item_name)) {
-					last_one_hand_item_name = "";
-					continue;
-			}
-		}
-
-		items[i].click();
-		numSelectedItem++;
-		j++;
-	}
-
-	if (j > 0) console.info("selected " + j + " / " + items.length + " " + itemTypes[typeIdx] + " items");
-	return true; // it's ok to continue;
-}
-
-/* item types : epic > rare > uncommon > common */
-async function cleanItems() {
-
-	var btns = GameDoc.getElementsByClassName("srpg-gear-multi-delete-button");
-	
-	if (btns.length == 2) btns[0].firstChild.click();	/* click the SELECT button */
-
-	numSelectedItem = 0;
-
-	if (!selectItemsByClassName("backpack-item-common", 0, discardCommonUncommonItems)) return;
-	if (!selectItemsByClassName("backpack-item-uncommon", 1, discardCommonUncommonItems)) return;
-
-	if (cleanDuplicatedRareItems && !selectItemsByClassName("backpack-item-rare", 2, false)) return;
-	if (cleanDuplicatedEpicItems && !selectItemsByClassName("backpack-item-epic", 3, false)) return;
-	
-	console.info("Totally selected " + numSelectedItem + " items");
-}
-
-function autoContribute() {
-
-	var btns = GameDoc.getElementsByClassName("player-api-btn srpg-button srpg-button-reward  btn btn-default");
-
-	// find the contribute btn (selected)
-	for (var i = btns.length - 1; i >= 0; i--) {
-
-		if (btns[i].parentElement.parentElement.parentElement.className.includes("srpg-building-selected")) {
-			btns[i].click();
-			return;			
-		}
-	}
-
-	if (guildTimer) {
-		clearInterval(guildTimer);
-		guildTimer = 0;
-		return;
-	}
-
-}
-
-function gotFatalError() {
-
-	/* ONWARDS Button when Errors : Fail safe - reload & auto start */
-	var errorWindow = GameDoc.getElementsByClassName("StreamRpgError srpg-takeover-window")[0];
-
-	if (errorWindow) {
-		stop();
-		console.debug("fatal error window shows, reload the game.");
-		window.location.reload();
-		return true;
-	}
-
-	return false;
-}
-
-function installHooks() {
-
-	if (gotFatalError()) return false;
-
-	if (!isReleaseMode) {	// for debug only.
-		window.resizeTo(320, 620);		
-		//window.moveTo(0, 0);
-	}
-
-	fightTab = GameDoc.getElementById("srpg-nav-tab-FIGHT");
-
-	if (!fightTab) return false;
-
-	// Auto Contribute Hook
-	var guildTab = GameDoc.getElementById("srpg-nav-tab-GUILD");
-
-	if (!guildTab) return false;
-
-	guildTab.onclick = function() {
-
-		if (guildTimer) {
-			clearInterval(guildTimer);
-			guildTimer = 0;
-			return;
-		}
-
-		guildTimer = setInterval(autoContribute, 1000);
-	}
-
-	// Clean Button Hook
-	gearTab = GameDoc.getElementById("srpg-nav-tab-GEAR");
-
-	if (!gearTab) return false;
-
-	gearTab.onclick = function() {
-
-		if (GameDoc.getElementsByClassName("srpg-gear-multi-delete-button").length >=2 ) return;
-
-		// Insert Clean Button
-		wait(400).then(() => {
-		
-			var deleteBar = GameDoc.getElementsByClassName("srpg-gear-multi-delete-bar")[0];
-
-			if (!deleteBar || deleteBar.children.length > 1) return;
-
-			cleanBtn = document.createElement("li");
-			cleanBtn.className = "srpg-gear-multi-delete-button";
-			cleanBtn.innerHTML = "<a><div>CLEAN</div><i class='fa fa-trash-o'></i></a>";
-			cleanBtn.onclick = cleanItems;
-
-			deleteBar.appendChild(cleanBtn);
-
-		});
-	}
-
-	var orgPopup = GameDoc.getElementsByClassName("srpg-top-bar-popout")[0];
-
-	if (!orgPopup) return false;
-
-	orgPopup.remove();
-
-	var topbar = GameDoc.getElementsByClassName("srpg-top-bar")[0];
-
-	if (!topbar) return false;
-
-	/* Auto Switch */
-	autoToggle = document.createElement("div");
-	autoToggle.className = "ToggleSwitch off";
-	autoToggle.innerHTML = '<div class="toggle-switch-text toggle-switch-on-text">ON</div><div class="toggle-switch-circle"></div><div class="toggle-switch-text toggle-switch-off-text">OFF</div>';
-
-	autoToggle.onclick = () => {
-
-		autoToggle.classList.toggle("on");
-		autoToggle.classList.toggle("off");
-		autoToggle.className.includes('on') ? start() : stop();
-
-		// ask content script to save to storage.
-		var isAutoStart = autoToggle.className.includes('on') ? "YES" : "NO";
-		
-		sessionStorage.setItem('autoStart', isAutoStart);
-	}
-	
-	var toggleContainer = document.createElement("div");
-
-	toggleContainer.className = "StreamRpgAutoFightToggle";
-	toggleContainer.innerHTML = '<div class="auto-fight-text" style="font-size: smaller;">AUTO<p id="fightRounds" ' +
-	'style="margin: 0px; font-size: xx-small; font-weight: lighter; font-family: DINPro-Regular; text-align: right;"></p></div>';
-	toggleContainer.appendChild(autoToggle);
-	
-	topbar.appendChild(toggleContainer);
-
-	fightRounds = GameDoc.getElementById("fightRounds");
-
-	// load options
-	document.dispatchEvent(new CustomEvent("LoadOptions"));
-
-	console.info("Installed. Enjoy it!");
-
-	// Auto Start
-	if (sessionStorage.getItem('autoStart') == "YES") autoToggle.click();
-
-	return true;
 }
 
 function install(showError = false) {
 
-	if (autoToggle) return true; // already installed
+	if (AutoToggle) return true; // already installed
 
-	GameDoc = document;
+	var gameDoc = document;
 
 	/* search local first */
-	if (document.title == GameTitle) return installHooks();
-
+	if ((document.title == GameTitle) 
+		&& installHooks(gameDoc, cleanItems, startAutoTimer, stopAutoTimer))
+		return gameDoc;
+	
 	/* search for StreamLegends iframes document */
 	for (var i = window.frames.length - 1; i >= 0; i--) {
+		
 		if (!window.frames[i].frames[0]) continue;
 
-		GameDoc = window.frames[i].frames[0].document;
+		gameDoc = window.frames[i].frames[0].document;
 
-		if (GameDoc && (GameDoc.title == GameTitle))
-			return installHooks();
+		if (gameDoc 
+			&& (gameDoc.title == GameTitle) 
+			&& installHooks(gameDoc, cleanItems, startAutoTimer, stopAutoTimer))
+			return gameDoc;
 	}
 
 	if (showError)
 		console.debug("Failed to find " + GameTitle);
 
-	GameDoc = 0;
-
 	return false;	// not found
-}
-
-/* Button Class Name Mapping */
-const BTN_COLLECT_LOOT      = 0;
-const BTN_RAID_BACK_TO_MAP  = 1;
-const BTN_ONWARDS_FAIL_SAVE = 2;
-const BTN_ONWARDS_NEW_ITEM  = 3;
-const BTN_ONWARDS_CONTINUE  = 4;
-const BTN_ONWARDS_COMBATLOG = 5;
-const BTN_FIGHT     		= 6;
-const BTN_SELL_SELECTED		= 7;
-const BTN_CLASSNAME_TABLE = [
-	["<COLLECT LOOT>", "srpg-button available post-fight-button srpg-button-reward btn btn-default"],
-	["<Back To Map>" , "srpg-button srpg-button-maps btn btn-default"],
-	["<ONWARDS> Errors", "srpg-button srpg-button-continue btn btn-default"],
-	["<ONWARDS> EQUIP", "player-api-btn srpg-button srpg-button-continue btn btn-default"],
-	["<ONWARD> Continue", "player-api-btn srpg-button srpg-button-continue btn btn-default"],
-	["<ONWARDS> COMBAT LOG", "player-api-btn srpg-button available post-fight-button btn btn-default"],
-	["<FIGHT>", "player-api-btn srpg-button btn btn-default"],
-	["<Sell Selected>", "player-api-btn  btn btn-default"]
-];
-
-function pressButton(btnIdx) {
-	
-	var btn;
-	if (btnIdx == 8) btn = GameDoc.getElementsByClassName(BTN_CLASSNAME_TABLE[btnIdx][1])[3];
-	else btn = GameDoc.getElementsByClassName(BTN_CLASSNAME_TABLE[btnIdx][1])[0];
-	
-	if (!btn) return false; // button not found
-
-	// button is buzy awaiting request.
-	if(btn.className.includes("srpg-awaiting-request-spinner")) return false;
-
-	btn.click();
-
-	console.log(BTN_CLASSNAME_TABLE[btnIdx][0]);	// Log it.
-
-	return true;	// pressed
-}
-
-var isRaiding = false;
-var hasRaid = false;
-var xmlhttp;
-var raidSwitchURL = "http://localhost:8000/raid.txt";	// Auto Raid control server
-
-function checkNewRaid() {
-
-	if (!xmlhttp) {
-		xmlhttp = new XMLHttpRequest();			
-		xmlhttp.onreadystatechange = function() {
-			if (this.readyState == 4 && this.status == 200) {
-	    		hasRaid = (this.responseText.replace(/[\n]/g,"") == "YES");
-	    		xmlhttp = 0;
-	    	}
-		};		
-
-		xmlhttp.open("GET", raidSwitchURL, true);
-		xmlhttp.setRequestHeader("Cache-Control", "no-cache");
-		xmlhttp.send();
-	}
-}
-
-function autoClean() {
-
-	console.log(">> Auto Clean");
-	gearTab.click();	
-
-	wait(500).then(() => {
-		
-		cleanItems();
-
-		var btns = GameDoc.getElementsByClassName("srpg-gear-multi-delete-button");
-		
-		if(btns.length >= 2)
-			btns[1].firstChild.click(); // SELL Button
-		else
-			throw new Error("delete buttons not found");
-
-	}).then(() => {
-
-		wait(100).then(pressButton(BTN_SELL_SELECTED));
-
-	}).catch(() => {
-
-		console.debug("delete buttons not found");
-
-	}).then(() => {
-
-		wait(300).then(fightTab.click());
-	});
-
 }
 
 function onAutoTimer() {
 
-	if (gotFatalError()) return;	
+	if (checkFatalError()) return;	
 
-	if (fightTab.className.includes("fight-active")) {
+	if (FightTab.className.includes("fight-active")) {
+
 		fightingTicks++;
 
 		if (shouldAutoClean) {
 			shouldAutoClean = false;
 			wait(2000).then(autoClean());
 		}
-
 		return;
 	}
 
-	if (fightTab.className.includes("unclaimed-reward")) {
+	if (FightTab.className.includes("unclaimed-reward")) {
 
 		// end fighting
 		if (fightingTicks > 0) {
@@ -459,11 +141,9 @@ function onAutoTimer() {
 		}
 
 		/* Automation only works when the Fight tab is selected, leave other tabs work as normal */		
-		if (!fightTab.className.includes('nav-selected')) return;
+		if (!FightTab.className.includes('nav-selected')) return;
 
-		isOnwarding++;
-
-		if (isOnwarding > 30) {
+		if (isOnwarding++ > 30) {
 			console.debug("onwarding timtout, reload the game.");
 			window.location.reload(); // timeout
 			return;
@@ -472,36 +152,38 @@ function onAutoTimer() {
 		if (GameDoc.getElementsByClassName("srpg-button-secondary")[0]) {
 
 			/* COLLECT LOOT */
-			if (pressButton(BTN_COLLECT_LOOT)) return;
+			if (clickButton(BTN_COLLECT_LOOT)) return;
 
 			/* ONWARDS Button when got new item */
-			if (pressButton(BTN_ONWARDS_NEW_ITEM)) {			
+			if (clickButton(BTN_ONWARDS_NEW_ITEM)) {			
 				numNewItems++;
 				console.log("Got ( " + numNewItems + " ) New Items");
-				if (enableAutoClean && (numNewItems % numNewItemsToAutoClean == 0))
+				if (opt.enableAutoClean 
+					&& (numNewItems % opt.numNewItemsToAutoClean == 0))
 					shouldAutoClean = true;
+
 				return;
 			}
 
 			/* ONWARDS Button with COMBAT LOG only */
-			if (pressButton(BTN_ONWARDS_COMBATLOG)) return;
+			if (clickButton(BTN_ONWARDS_COMBATLOG)) return;
 
 		} else {
 
-			if (pressButton(BTN_ONWARDS_CONTINUE)) return;
+			if (clickButton(BTN_ONWARDS_CONTINUE)) return;
 		}
 
 		return;
 	}
 
-	if (fightTab.className.includes("fight-ready")) {
+	if (FightTab.className.includes("fight-ready")) {
 
 		isOnwarding = 0;
 
 		/* Automation only works when the Fight tab is selected, leave other tabs work as normal */		
-		if (!fightTab.className.includes('nav-selected')) return;
+		if (!FightTab.className.includes('nav-selected')) return;
 
-		if (!ignoreRaid) {
+		if (!opt.ignoreRaid) {
 			/* Level Selection (Raid > forceLowLevel > newLevel > highest 2 levels) */
 			var raidLevel = GameDoc.getElementsByClassName("map-raid")[0];
 
@@ -525,7 +207,7 @@ function onAutoTimer() {
 
 		var levels = GameDoc.getElementsByClassName("map-completed");
 
-		if ((!levels.length /* no completed levels, */ || !forceLowLevel) && newLevel) {
+		if ((!levels.length /* no completed levels, */ || !opt.forceLowLevel) && newLevel) {
 			isRaiding = false;
 			console.log(">> Select New Level");
 			newLevel.click();
@@ -536,7 +218,7 @@ function onAutoTimer() {
 
 			isRaiding = false;
 
-			if (forceLowLevel) {				
+			if (opt.forceLowLevel) {				
 				console.log(">> Force Low Level");				
 				levels[0].click();
 				return;
@@ -552,7 +234,19 @@ function onAutoTimer() {
 			return;
 		}
 
-		if (pressButton(BTN_RAID_BACK_TO_MAP)) return;
+		var rows = GameDoc.getElementsByClassName("contribution-entry contribution-row");
+
+		if (rows) {
+			for(var i = 0; i < 5; i++) {
+				var row = rows[i];
+				if (row) {
+					var str = row.children[0].innerText + " " + row.children[1].innerText + "\t" + row.children[2].innerText;
+					console.log(str);
+				}
+			}
+		}
+
+		if (clickButton(BTN_RAID_BACK_TO_MAP)) return;
 
 		// Auto Raid for debug only
 		if (!isReleaseMode && !isRaiding) {
@@ -563,7 +257,7 @@ function onAutoTimer() {
 
 				checkNewRaid(); // only check new raid in the map state.
 
-				if (hasRaid) {
+				if (opt.hasRaid) {
 					mapCloseBtn.click();
 					return;
 				}
@@ -571,13 +265,12 @@ function onAutoTimer() {
 		}
 
 		// click FIGHT!
-		if (pressButton(BTN_FIGHT)) {
+		if (clickButton(BTN_FIGHT)) {
 
 			var raidXP = GameDoc.getElementsByClassName("raid-progress-xp")[0];
 			if (raidXP) console.log("Raid Progress: " + raidXP.innerText);
 
-			numFights++;
-			fightRounds.innerHTML = numFights;
+			updateFightRounds((numFights++));
 			console.log("Round -< " + numFights + " >-");
 			return;
 		}

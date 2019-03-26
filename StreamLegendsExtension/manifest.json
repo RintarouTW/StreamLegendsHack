@@ -28,7 +28,7 @@
     }
   ],
 
-  "web_accessible_resources": ["StreamLegendsAuto.js", "default.js"],
+  "web_accessible_resources": ["StreamLegendsAuto.js", "default.js", "/modules/*.js"],
   
   "options_ui": {
     "page": "popup.html",
