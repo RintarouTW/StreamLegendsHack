@@ -24,14 +24,17 @@ const BTN_CLASSNAME_TABLE = [
 
 function clickButton(btnIdx) {
 	
-	var btn = GameDoc.getElementsByClassName(BTN_CLASSNAME_TABLE[btnIdx][1])[0];
+	let btn = GameDoc.getElementsByClassName(BTN_CLASSNAME_TABLE[btnIdx][1])[0];
+
 	if (!btn) return false; // button not found
 
 	// button is buzy awaiting request.
 	if(btn.className.includes("srpg-awaiting-request-spinner")) return false;
 
 	btn.click();
+	
 	console.log(BTN_CLASSNAME_TABLE[btnIdx][0]);	// Log it.
+
 	return true;	// pressed
 }
 

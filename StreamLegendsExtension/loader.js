@@ -1,7 +1,7 @@
 /* Update Option to the hack script. */
-function updateOption(name, value) {
+function updateOptions(data) {
 
-	var evt = new CustomEvent("SetOption", { detail: { optionName: name, value : value}});
+	let evt = new CustomEvent("UpdateOptions", { detail: data });
 	
 	document.dispatchEvent(evt);
 }
@@ -13,9 +13,7 @@ function setup() {
 
 		chrome.storage.local.get(['forceLowLevel', 'cleanDuplicatedRareItems', 'cleanDuplicatedEpicItems'], function(data) {
 
-			updateOption('forceLowLevel', data.forceLowLevel);
-			updateOption('cleanDuplicatedRareItems', data.cleanDuplicatedRareItems);
-			updateOption('cleanDuplicatedEpicItems', data.cleanDuplicatedEpicItems);
+			updateOptions(data);
 
 		});
 
@@ -30,23 +28,21 @@ function setup() {
 	};
 	(document.head || document.documentElement).appendChild(s);
 
-
 	/* Regiester for Popup's commands */
 	chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 
-		updateOption(request.cmd, request.value);
+		updateOptions(request.data);
 		
 		sendResponse("done");
 	});
-
 }
 
 (async () => {
 
 	// Default Configuration
-  	const defaultSetting = await import("./default.js");
+  	const config = await import("./default.js");
 
-	if (defaultSetting.DebugMode == "YES") {
+	if (config.DebugMode == "YES") {
 		
 		// Insert to the top most frame anyway.
 		if (window.top == window) setup();
@@ -57,4 +53,3 @@ function setup() {
 
 	}
 })();
-

@@ -83,14 +83,14 @@ function startAutoTimer() {
 	totalFightingTicks = 0;
 	isOnwarding = 0;
 
-	autoTimer = setInterval(onAutoTimer, 1000);
+	autoTimer = setInterval(onAutoTimer, 700);
 }
 
 function install(showError = false) {
 
 	if (AutoToggle) return true; // already installed
 
-	var gameDoc = document;
+	let gameDoc = document;
 
 	/* search local first */
 	if ((document.title == GameTitle) 
@@ -98,7 +98,7 @@ function install(showError = false) {
 		return gameDoc;
 	
 	/* search for StreamLegends iframes document */
-	for (var i = window.frames.length - 1; i >= 0; i--) {
+	for (let i = window.frames.length - 1; i >= 0; i--) {
 		
 		if (!window.frames[i].frames[0]) continue;
 
@@ -185,11 +185,11 @@ function onAutoTimer() {
 
 		if (!opt.ignoreRaid) {
 			/* Level Selection (Raid > forceLowLevel > newLevel > highest 2 levels) */
-			var raidLevel = GameDoc.getElementsByClassName("map-raid")[0];
+			let raidLevel = GameDoc.getElementsByClassName("map-raid")[0];
 
 			if (raidLevel) {
 
-				var expireText = GameDoc.getElementsByClassName("srpg-map-list-node-lvl font-medium")[0].innerText;
+				let expireText = GameDoc.getElementsByClassName("srpg-map-list-node-lvl font-medium")[0].innerText;
 
 				isRaiding = true;
 				console.log(">> Enter Raid ( " + expireText + " )");
@@ -203,11 +203,12 @@ function onAutoTimer() {
 			}
 		}
 
-		var newLevel = GameDoc.getElementsByClassName("map-selected")[0];
+		let newLevel = GameDoc.getElementsByClassName("map-selected")[0];
 
-		var levels = GameDoc.getElementsByClassName("map-completed");
+		let levels = GameDoc.getElementsByClassName("map-completed");
 
-		if ((!levels.length /* no completed levels, */ || !opt.forceLowLevel) && newLevel) {
+		if ((!levels.length || !opt.forceLowLevel) && newLevel) {
+
 			isRaiding = false;
 			console.log(">> Select New Level");
 			newLevel.click();
@@ -224,7 +225,7 @@ function onAutoTimer() {
 				return;
 			}
 
-			var lvlIdx = (prevLevel) ? (levels.length - 1) : (levels.length - 2);
+			let lvlIdx = (prevLevel) ? (levels.length - 1) : (levels.length - 2);
 
 			console.log(">> Select Level item[" + lvlIdx + "]");
 
@@ -234,13 +235,14 @@ function onAutoTimer() {
 			return;
 		}
 
-		var rows = GameDoc.getElementsByClassName("contribution-entry contribution-row");
+		// Log the Raid Ranking
+		let rows = GameDoc.getElementsByClassName("contribution-entry contribution-row");
 
 		if (rows) {
-			for(var i = 0; i < 5; i++) {
-				var row = rows[i];
+			for(let i = 0; i < 5; i++) {
+				let row = rows[i];
 				if (row) {
-					var str = row.children[0].innerText + " " + row.children[1].innerText + "\t" + row.children[2].innerText;
+					let str = row.children[0].innerText + " " + row.children[1].innerText + "\t" + row.children[2].innerText;
 					console.log(str);
 				}
 			}
@@ -251,7 +253,7 @@ function onAutoTimer() {
 		// Auto Raid for debug only
 		if (!isReleaseMode && !isRaiding) {
 
-			var mapCloseBtn = GameDoc.getElementsByClassName("srpg-map-close")[0];
+			let mapCloseBtn = GameDoc.getElementsByClassName("srpg-map-close")[0];
 
 			if (mapCloseBtn) {
 
@@ -267,7 +269,7 @@ function onAutoTimer() {
 		// click FIGHT!
 		if (clickButton(BTN_FIGHT)) {
 
-			var raidXP = GameDoc.getElementsByClassName("raid-progress-xp")[0];
+			let raidXP = GameDoc.getElementsByClassName("raid-progress-xp")[0];
 			if (raidXP) console.log("Raid Progress: " + raidXP.innerText);
 
 			updateFightRounds((numFights++));

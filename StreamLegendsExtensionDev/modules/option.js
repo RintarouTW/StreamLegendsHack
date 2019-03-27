@@ -5,7 +5,7 @@ var opt = {
 	forceLowLevel : false,
 	cleanDuplicatedRareItems : false,
 	cleanDuplicatedEpicItems : false,
-	discardCommonUncommonItems : false,
+	discardCommonUncommonItems : true,
 	enableAutoClean : true,
 	numNewItemsToAutoClean : 20,
 	maxCleanItems : 100,
@@ -13,7 +13,7 @@ var opt = {
 	hasRaid : false
 };
 
-var autoRaidURL = "http://localhost:8000/raid.txt";	// Auto Raid control server
+const autoRaidURL = "http://localhost:8000/raid.txt";	// Auto Raid control server
 
 var xmlhttp;
 
@@ -35,10 +35,20 @@ function checkNewRaid() {
 }
 
 /* Handle options changed event from content script */
-document.addEventListener("SetOption", event => {
+document.addEventListener("UpdateOptions", event => {
 
-	if (typeof(opt[event.detail.optionName]) != 'undefined')
-		opt[event.detail.optionName] = (event.detail.value == "YES");
+	let data = event.detail;
+
+	for (let key of Object.keys(data)) {
+		//console.log("[ " + key + " : " + data[key] + " ]");
+		if (typeof (opt[key]) == "boolean")
+		
+			opt[key] = (data[key] == "YES");
+
+		else if ( typeof (opt[key]) == typeof (data[key]) )
+		
+			opt[key] = data[key];
+	}
 });
 
 export {opt, checkNewRaid};

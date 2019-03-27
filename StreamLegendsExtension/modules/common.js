@@ -21,13 +21,13 @@ var guildTimer;
 
 function autoContribute() {
 
-	var contributeBtnClassName = "player-api-btn srpg-button srpg-button-reward  btn btn-default";
-	var btns = GameDoc.getElementsByClassName(contributeBtnClassName);
+	let contributeBtnClassName = "player-api-btn srpg-button srpg-button-reward  btn btn-default";
+	let btns = GameDoc.getElementsByClassName(contributeBtnClassName);
 
 	// find the contribute btn (selected)
-	for (var i = btns.length - 1; i >= 0; i--) {
+	for (let i = btns.length - 1; i >= 0; i--) {
 
-		var containerClassName = btns[i].parentElement.parentElement.parentElement.className;
+		let containerClassName = btns[i].parentElement.parentElement.parentElement.className;
 		if (containerClassName.includes("srpg-building-selected")) {
 			btns[i].click();
 			return;			
@@ -44,7 +44,7 @@ function autoContribute() {
 function checkFatalError() {
 
 	/* ONWARDS Button when Errors : Fail safe - reload & auto start */
-	var errorWindow = GameDoc.getElementsByClassName("StreamRpgError srpg-takeover-window")[0];
+	let errorWindow = GameDoc.getElementsByClassName("StreamRpgError srpg-takeover-window")[0];
 
 	if (errorWindow) {
 		stop();
@@ -69,7 +69,7 @@ function installHooks(gameDoc, cleanItems, startAutoTimer, stopAutoTimer) {
 	if (!FightTab) return false;
 
 	// Auto Contribute Hook
-	var guildTab = GameDoc.getElementById("srpg-nav-tab-GUILD");
+	let guildTab = GameDoc.getElementById("srpg-nav-tab-GUILD");
 
 	if (!guildTab) return false;
 
@@ -96,11 +96,11 @@ function installHooks(gameDoc, cleanItems, startAutoTimer, stopAutoTimer) {
 		// Insert Clean Button
 		wait(400).then(() => {
 		
-			var deleteBar = GameDoc.getElementsByClassName("srpg-gear-multi-delete-bar")[0];
+			let deleteBar = GameDoc.getElementsByClassName("srpg-gear-multi-delete-bar")[0];
 
 			if (!deleteBar || deleteBar.children.length > 1) return;
 
-			var cleanBtn = document.createElement("li");
+			let cleanBtn = document.createElement("li");
 			cleanBtn.className = "srpg-gear-multi-delete-button";
 			cleanBtn.innerHTML = "<a><div>CLEAN</div><i class='fa fa-trash-o'></i></a>";
 			cleanBtn.onclick = cleanItems;
@@ -109,13 +109,13 @@ function installHooks(gameDoc, cleanItems, startAutoTimer, stopAutoTimer) {
 		});
 	}
 
-	var orgPopup = GameDoc.getElementsByClassName("srpg-top-bar-popout")[0];
+	let orgPopup = GameDoc.getElementsByClassName("srpg-top-bar-popout")[0];
 
 	if (!orgPopup) return false;
 
 	orgPopup.remove();
 
-	var topbar = GameDoc.getElementsByClassName("srpg-top-bar")[0];
+	let topbar = GameDoc.getElementsByClassName("srpg-top-bar")[0];
 
 	if (!topbar) return false;
 
@@ -130,13 +130,13 @@ function installHooks(gameDoc, cleanItems, startAutoTimer, stopAutoTimer) {
 		AutoToggle.classList.toggle("off");
 		AutoToggle.className.includes('on') ? startAutoTimer() : stopAutoTimer();
 
-		var isAutoStart = AutoToggle.className.includes('on') ? "YES" : "NO";
+		let isAutoStart = AutoToggle.className.includes('on') ? "YES" : "NO";
 		
 		// save to the session only		
 		sessionStorage.setItem('AutoStart', isAutoStart);
 	}
 	
-	var toggleContainer = document.createElement("div");
+	let toggleContainer = document.createElement("div");
 
 	toggleContainer.className = "StreamRpgAutoFightToggle";
 	toggleContainer.innerHTML = '<div class="auto-fight-text" style="font-size: smaller;">AUTO<p id="FightRounds" ' +

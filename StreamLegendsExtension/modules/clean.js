@@ -20,13 +20,15 @@ function overMaxSelected() {
 
 function selectItemsByClassName(itemClassName, typeIdx, noReserve = false) {
 
-	var j = 0, last_item_name = "", last_one_hand_item_name = "";
+	let j = 0, last_item_name = "", last_one_hand_item_name = "";
 
-	var itemTypes = ["common", "uncommon", "rare", "epic"];
+	let itemTypes = ["common", "uncommon", "rare", "epic"];
 
-	var items = GameDoc.getElementsByClassName(itemClassName);
+	let items = GameDoc.getElementsByClassName(itemClassName);
 
-	for(var i = items.length - 1; i >= 0 ; i--) {
+	let reservedItems = [];
+
+	for(let i = items.length - 1; i >= 0 ; i--) {
 
 		if (overMaxSelected()) {
 
@@ -43,7 +45,10 @@ function selectItemsByClassName(itemClassName, typeIdx, noReserve = false) {
 
 		if(last_item_name != items[i].className) {
 
-			last_item_name = items[i].className;	/* reserve the last one */
+			last_item_name = items[i].className;	/* reserve the first one */
+
+			reservedItems = [];
+			reservedItems.push(items[i]);
 
 			if (last_item_name.includes("_1h_") && 
 				!last_item_name.includes("backpack-item-item_scifi_1h_portable_black_hole_generator_tier_")) 
@@ -53,17 +58,35 @@ function selectItemsByClassName(itemClassName, typeIdx, noReserve = false) {
 
 		} else {
 
-			/* reserver another one hand item again */
+			/* reserve another one hand item again */
 			if ((last_one_hand_item_name != "") && 
 				(items[i].className == last_one_hand_item_name)) {
+
+					reservedItems.push(items[i]);
 					last_one_hand_item_name = "";
 					continue;
 			}
 		}
 
-		items[i].click();
+		// keep the one is equiped, use one of the reservedItems instead.
+		if (items[i].children.length == 3) {
+			
+			let reservItem = reservedItems.pop();
+
+			if (reservItem.children.length == 3) {
+				reservItem = reservedItems.pop();
+			}
+
+			reservItem.click();
+
+		} else {
+			
+			items[i].click();
+		}
+
 		numSelectedItem++;
 		j++;
+
 	}
 
 	if (j > 0) console.info("selected " + j + " / " + items.length + " " + itemTypes[typeIdx] + " items");
@@ -73,9 +96,10 @@ function selectItemsByClassName(itemClassName, typeIdx, noReserve = false) {
 /* item types : epic > rare > uncommon > common */
 async function cleanItems() {
 
-	var btns = GameDoc.getElementsByClassName("srpg-gear-multi-delete-button");
+	let btns = GameDoc.getElementsByClassName("srpg-gear-multi-delete-button");
 	
-	if (btns.length == 2) btns[0].firstChild.click();	/* click the SELECT button */
+	if (btns.length == 2) 
+		btns[0].firstChild.click();	/* click the SELECT button */
 
 	numSelectedItem = 0;
 
@@ -97,7 +121,7 @@ function autoClean() {
 		
 		cleanItems();
 
-		var btns = GameDoc.getElementsByClassName("srpg-gear-multi-delete-button");
+		let btns = GameDoc.getElementsByClassName("srpg-gear-multi-delete-button");
 		
 		if(btns.length >= 2)
 			btns[1].firstChild.click(); // SELL Button
