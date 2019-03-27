@@ -10,7 +10,7 @@ function overMaxSelected() {
 
 	if (numSelectedItem >= opt.maxCleanItems) {
 
-		console.info(opt.maxCleanItems + " max items selected at a time. clean others next time!");
+		console.info(opt.maxCleanItems + " max items selected at a time. clean the rest next time!");
 		numSelectedItem = 0;
 		return true;
 	}
@@ -28,7 +28,7 @@ function selectItemsByClassName(itemClassName, typeIdx, noReserve = false) {
 
 	let reservedItems = [];
 
-	for(let i = items.length - 1; i >= 0 ; i--) {
+	for(let item of items) {
 
 		if (overMaxSelected()) {
 
@@ -37,18 +37,18 @@ function selectItemsByClassName(itemClassName, typeIdx, noReserve = false) {
 		}
 
 		if (noReserve) {
-			items[i].click();
+			item.click();
 			numSelectedItem++;
 			j++;
 			continue;
 		}
 
-		if(last_item_name != items[i].className) {
+		if(last_item_name != item.className) {
 
-			last_item_name = items[i].className;	/* reserve the first one */
+			last_item_name = item.className;	/* reserve the first one */
 
 			reservedItems = [];
-			reservedItems.push(items[i]);
+			reservedItems.push(item);
 
 			if (last_item_name.includes("_1h_") && 
 				!last_item_name.includes("backpack-item-item_scifi_1h_portable_black_hole_generator_tier_")) 
@@ -60,20 +60,21 @@ function selectItemsByClassName(itemClassName, typeIdx, noReserve = false) {
 
 			/* reserve another one hand item again */
 			if ((last_one_hand_item_name != "") && 
-				(items[i].className == last_one_hand_item_name)) {
+				(item.className == last_one_hand_item_name)) {
 
-					reservedItems.push(items[i]);
+					reservedItems.push(item);
 					last_one_hand_item_name = "";
 					continue;
 			}
 		}
 
 		// keep the one is equiped, use one of the reservedItems instead.
-		if (items[i].children.length == 3) {
+		// The locked icon width is 20, the equipped icon width is 16.
+		if ((item.children.length == 3) && (item.firstChild.width == 16)){
 			
 			let reservItem = reservedItems.pop();
 
-			if (reservItem.children.length == 3) {
+			if ((reservItem.children.length == 3) && (reservItem.firstChild.width == 16)) {
 				reservItem = reservedItems.pop();
 			}
 
@@ -81,12 +82,11 @@ function selectItemsByClassName(itemClassName, typeIdx, noReserve = false) {
 
 		} else {
 			
-			items[i].click();
+			item.click();
 		}
 
 		numSelectedItem++;
 		j++;
-
 	}
 
 	if (j > 0) console.info("selected " + j + " / " + items.length + " " + itemTypes[typeIdx] + " items");
