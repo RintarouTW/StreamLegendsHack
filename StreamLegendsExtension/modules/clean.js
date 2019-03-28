@@ -69,12 +69,12 @@ function selectItemsByClassName(itemClassName, typeIdx, noReserve = false) {
 		}
 
 		// keep the one is equiped, use one of the reservedItems instead.
-		// The locked icon width is 20, the equipped icon width is 16.
-		if ((item.children.length == 3) && (item.firstChild.width == 16)){
+		// The locked svg icon clientWidth is 20, the equipped svg icon clientWidth is 16.
+		if ((item.children.length == 3) && (item.firstChild.clientWidth == 16)){
 			
 			let reservItem = reservedItems.pop();
 
-			if ((reservItem.children.length == 3) && (reservItem.firstChild.width == 16)) {
+			if ((reservItem.children.length == 3) && (reservItem.firstChild.clientWidth == 16)) {
 				reservItem = reservedItems.pop();
 			}
 
