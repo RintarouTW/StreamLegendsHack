@@ -2,15 +2,15 @@
 
 /* Game Options */
 var opt = {
-	forceLowLevel : false,
-	cleanDuplicatedRareItems : false,
-	cleanDuplicatedEpicItems : false,
-	discardCommonUncommonItems : true,
-	enableAutoClean : true,
-	numNewItemsToAutoClean : 20,
-	maxCleanItems : 100,
-	ignoreRaid : false,
-	hasRaid : false
+	ForceLowLevel : false,
+	CleanDuplicatedRareItems : false,
+	CleanDuplicatedEpicItems : false,
+	DiscardCommonUncommonItems : true,
+	EnableAutoClean : true,
+	NumNewItemsToAutoClean : 20,
+	MaxCleanItems : 100,
+	IgnoreRaid : false,
+	HasRaid : false
 };
 
 const autoRaidURL = "http://localhost:8000/raid.txt";	// Auto Raid control server
@@ -20,10 +20,10 @@ var xmlhttp;
 function checkNewRaid() {
 
 	if (!xmlhttp) {
-		xmlhttp = new XMLHttpRequest();			
+		xmlhttp = new XMLHttpRequest();
 		xmlhttp.onreadystatechange = function() {
 			if (this.readyState == 4 && this.status == 200) {
-	    		opt.hasRaid = (this.responseText.replace(/[\n]/g,"") == "YES");
+	    		opt.HasRaid = (this.responseText.replace(/[\n]/g,"") == "YES");
 	    		xmlhttp = 0;
 	    	}
 		};		
@@ -40,14 +40,11 @@ document.addEventListener("UpdateOptions", event => {
 	let data = event.detail;
 
 	for (let key of Object.keys(data)) {
-		//console.log("[ " + key + " : " + data[key] + " ]");
-		if (typeof (opt[key]) == "boolean")
-		
-			opt[key] = (data[key] == "YES");
 
-		else if ( typeof (opt[key]) == typeof (data[key]) )
-		
+		if ( typeof (opt[key]) == typeof (data[key]) )		
 			opt[key] = data[key];
+		else
+			console.warn("Type Error - [ " + key + " : " + data[key] + " ]");
 	}
 });
 

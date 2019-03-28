@@ -158,8 +158,8 @@ function onAutoTimer() {
 			if (clickButton(BTN_ONWARDS_NEW_ITEM)) {			
 				numNewItems++;
 				console.log("Got ( " + numNewItems + " ) New Items");
-				if (opt.enableAutoClean 
-					&& (numNewItems % opt.numNewItemsToAutoClean == 0))
+				if (opt.EnableAutoClean 
+					&& (numNewItems % opt.NumNewItemsToAutoClean == 0))
 					shouldAutoClean = true;
 
 				return;
@@ -183,8 +183,8 @@ function onAutoTimer() {
 		/* Automation only works when the Fight tab is selected, leave other tabs work as normal */		
 		if (!FightTab.className.includes('nav-selected')) return;
 
-		if (!opt.ignoreRaid) {
-			/* Level Selection (Raid > forceLowLevel > newLevel > highest 2 levels) */
+		if (!opt.IgnoreRaid) {
+			/* Level Selection (Raid > ForceLowLevel > newLevel > highest 2 levels) */
 			let raidLevel = GameDoc.getElementsByClassName("map-raid")[0];
 
 			if (raidLevel) {
@@ -207,7 +207,7 @@ function onAutoTimer() {
 
 		let levels = GameDoc.getElementsByClassName("map-completed");
 
-		if ((!levels.length || !opt.forceLowLevel) && newLevel) {
+		if ((!levels.length || !opt.ForceLowLevel) && newLevel) {
 
 			isRaiding = false;
 			console.log(">> Select New Level");
@@ -219,7 +219,7 @@ function onAutoTimer() {
 
 			isRaiding = false;
 
-			if (opt.forceLowLevel) {				
+			if (opt.ForceLowLevel) {				
 				console.log(">> Force Low Level");				
 				levels[0].click();
 				return;
@@ -259,7 +259,7 @@ function onAutoTimer() {
 
 				checkNewRaid(); // only check new raid in the map state.
 
-				if (opt.hasRaid) {
+				if (opt.HasRaid) {
 					mapCloseBtn.click();
 					return;
 				}

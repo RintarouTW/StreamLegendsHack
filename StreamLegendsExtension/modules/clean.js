@@ -8,9 +8,9 @@ var numSelectedItem = 0;
 
 function overMaxSelected() {
 
-	if (numSelectedItem >= opt.maxCleanItems) {
+	if (numSelectedItem >= opt.MaxCleanItems) {
 
-		console.info(opt.maxCleanItems + " max items selected at a time. clean the rest next time!");
+		console.info(opt.MaxCleanItems + " max items selected at a time. clean the rest next time!");
 		numSelectedItem = 0;
 		return true;
 	}
@@ -103,11 +103,11 @@ async function cleanItems() {
 
 	numSelectedItem = 0;
 
-	if (!selectItemsByClassName("backpack-item-common", 0, opt.discardCommonUncommonItems)) return;
-	if (!selectItemsByClassName("backpack-item-uncommon", 1, opt.discardCommonUncommonItems)) return;
+	if (!selectItemsByClassName("backpack-item-common", 0, opt.DiscardCommonUncommonItems)) return;
+	if (!selectItemsByClassName("backpack-item-uncommon", 1, opt.DiscardCommonUncommonItems)) return;
 
-	if (opt.cleanDuplicatedRareItems && !selectItemsByClassName("backpack-item-rare", 2, false)) return;
-	if (opt.cleanDuplicatedEpicItems && !selectItemsByClassName("backpack-item-epic", 3, false)) return;
+	if (opt.CleanDuplicatedRareItems && !selectItemsByClassName("backpack-item-rare", 2, false)) return;
+	if (opt.CleanDuplicatedEpicItems && !selectItemsByClassName("backpack-item-epic", 3, false)) return;
 	
 	console.info("Totally selected " + numSelectedItem + " items");
 }

@@ -11,7 +11,7 @@ function setup() {
 	/* the hack script would ask to load options after install too */
 	document.addEventListener("LoadOptions", function(evt) {
 
-		chrome.storage.local.get(['forceLowLevel', 'cleanDuplicatedRareItems', 'cleanDuplicatedEpicItems'], function(data) {
+		chrome.storage.local.get(['ForceLowLevel', 'CleanDuplicatedRareItems', 'CleanDuplicatedEpicItems'], function(data) {
 
 			updateOptions(data);
 
@@ -40,9 +40,9 @@ function setup() {
 (async () => {
 
 	// Default Configuration
-  	const config = await import("./default.js");
+  	const { DebugMode } = await import("./default.js");
 
-	if (config.DebugMode == "YES") {
+	if (DebugMode) {
 		
 		// Insert to the top most frame anyway.
 		if (window.top == window) setup();

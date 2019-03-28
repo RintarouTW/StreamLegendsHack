@@ -1,6 +1,6 @@
 'use strict';
 
-export const ForceLowLevel = "YES";
-export const CleanDuplicatedRareItems = "YES";
-export const CleanDuplicatedEpicItems = "YES";
-export const DebugMode = "YES";
+export const ForceLowLevel = true;
+export const CleanDuplicatedRareItems = true;
+export const CleanDuplicatedEpicItems = true;
+export const DebugMode = true;

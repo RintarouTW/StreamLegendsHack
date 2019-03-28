@@ -4,11 +4,9 @@ chrome.runtime.onInstalled.addListener(function() {
   
   (async () => {
     
-    let defaultSetting = await import("./default.js"); // Default Options
+    let defaults = await import("./default.js"); // Default Options
 
-    chrome.storage.local.set( {forceLowLevel: defaultSetting.ForceLowLevel, 
-      cleanDuplicatedRareItems: defaultSetting.CleanDuplicatedRareItems, 
-      cleanDuplicatedEpicItems: defaultSetting.CleanDuplicatedEpicItems} );
+    chrome.storage.local.set(defaults);
 
   })();
 

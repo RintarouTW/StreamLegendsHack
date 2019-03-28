@@ -6,15 +6,16 @@ function handleClick(evt) {
 	let data = {};
 
 	//console.warn(evt.target.name);
+	console.warn(evt.target.value);
 	switch(evt.target.name) {
 		case "radios":
-			data = {forceLowLevel : evt.target.value};
+			data = {ForceLowLevel : evt.target.value};
 		break;		
 		case "radios2":
-			data = {cleanDuplicatedRareItems : evt.target.value};
+			data = {CleanDuplicatedRareItems : evt.target.value};
 		break;
 		case "radios3":
-			data = {cleanDuplicatedEpicItems : evt.target.value};
+			data = {CleanDuplicatedEpicItems : evt.target.value};
 		break;
 	}
 
@@ -31,20 +32,20 @@ document.getElementsByName("radios2").forEach( function(x) { x.onclick = handleC
 document.getElementsByName("radios3").forEach( function(x) { x.onclick = handleClick; });
 
 /* loadOptions */
-chrome.storage.local.get(['forceLowLevel', 'cleanDuplicatedRareItems', 'cleanDuplicatedEpicItems'], function(data) {
+chrome.storage.local.get(['ForceLowLevel', 'CleanDuplicatedRareItems', 'CleanDuplicatedEpicItems'], function(data) {
 
-	if (data.forceLowLevel == "YES") 
-		document.forceLowLevel[0].checked = true;
+	if (data.ForceLowLevel) 
+		document.ForceLowLevel[0].checked = true;
 	else 
-		document.forceLowLevel[1].checked = true;
+		document.ForceLowLevel[1].checked = true;
 
-	if (data.cleanDuplicatedRareItems == "YES")
-		document.cleanDuplicatedRareItems[0].checked = true;
+	if (data.CleanDuplicatedRareItems)
+		document.CleanDuplicatedRareItems[0].checked = true;
 	else 
-		document.cleanDuplicatedRareItems[1].checked = true;
+		document.CleanDuplicatedRareItems[1].checked = true;
 
-	if (data.cleanDuplicatedEpicItems == "YES")
-		document.cleanDuplicatedEpicItems[0].checked = true;
+	if (data.CleanDuplicatedEpicItems)
+		document.CleanDuplicatedEpicItems[0].checked = true;
 	else 
-		document.cleanDuplicatedEpicItems[1].checked = true;
+		document.CleanDuplicatedEpicItems[1].checked = true;
 });
