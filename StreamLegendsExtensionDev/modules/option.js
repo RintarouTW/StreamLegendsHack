@@ -41,10 +41,13 @@ document.addEventListener("UpdateOptions", event => {
 
 	for (let key of Object.keys(data)) {
 
-		if ( typeof (opt[key]) == typeof (data[key]) )		
+		if ( typeof (opt[key]) == typeof (data[key]) ) {
+			console.log("[ " + key + " : " + data[key] + " ]");
 			opt[key] = data[key];
-		else
+		} else {
 			console.warn("Type Error - [ " + key + " : " + data[key] + " ]");
+			console.warn("should be " + (typeof (opt[key])) + ", but it's " + (typeof (data[key])));
+		}
 	}
 });
 

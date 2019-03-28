@@ -19,6 +19,19 @@ function setup() {
 
 	});
 
+	/* Config chanced by Popup/Option page */
+	chrome.storage.onChanged.addListener(function(changes, namespace) {
+		
+		if(namespace != "local") return;
+
+		let data = {};
+
+        for (var key in changes)
+        	data[key] = changes[key].newValue;
+
+    	updateOptions(data);
+    });
+
 	/* Insert the hack script to the head */
 	var s = document.createElement('script');
 	s.type = "module";
@@ -28,13 +41,6 @@ function setup() {
 	};
 	(document.head || document.documentElement).appendChild(s);
 
-	/* Regiester for Popup's commands */
-	chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-
-		updateOptions(request.data);
-		
-		sendResponse("done");
-	});
 }
 
 (async () => {
@@ -52,4 +58,5 @@ function setup() {
 		if (document.title == "StreamLegends" /* GameTitle */) setup();
 
 	}
+
 })();

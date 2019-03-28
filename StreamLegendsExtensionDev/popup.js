@@ -6,24 +6,23 @@ function handleClick(evt) {
 	let data = {};
 
 	//console.warn(evt.target.name);
-	console.warn(evt.target.value);
+	let value = (evt.target.value == "true") ? true : false;
+
 	switch(evt.target.name) {
 		case "radios":
-			data = {ForceLowLevel : evt.target.value};
+			data = { ForceLowLevel : value };
 		break;		
 		case "radios2":
-			data = {CleanDuplicatedRareItems : evt.target.value};
+			data = { CleanDuplicatedRareItems : value };
 		break;
 		case "radios3":
-			data = {CleanDuplicatedEpicItems : evt.target.value};
+			data = { CleanDuplicatedEpicItems : value };
 		break;
 	}
 
 	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
 		// save to the storage
-		chrome.storage.local.set(data, function(){});
-		// send the data to the loader.
-		chrome.tabs.sendMessage(tabs[0].id, { data });
+		chrome.storage.local.set(data);
     });
 }
 
