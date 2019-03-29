@@ -8,9 +8,9 @@ var numSelectedItem = 0;
 
 function overMaxSelected() {
 
-	if (numSelectedItem >= opt.MaxCleanItems) {
+	if (numSelectedItem >= opt.CleanItemsLimit) {
 
-		console.info(opt.MaxCleanItems + " max items selected at a time. clean the rest next time!");
+		console.info(opt.CleanItemsLimit + " items selected at once. clean the others next time!");
 		numSelectedItem = 0;
 		return true;
 	}
@@ -22,13 +22,13 @@ function selectItemsByClassName(itemClassName, typeIdx, noReserve = false) {
 
 	let j = 0, last_item_name = "", last_one_hand_item_name = "";
 
-	let itemTypes = ["common", "uncommon", "rare", "epic"];
+	let itemTypes = ["common", "uncommon", "rare", "epic", "legendary"];
 
 	let items = GameDoc.getElementsByClassName(itemClassName);
 
 	let reservedItems = [];
 
-	for(let item of items) {
+	for(const item of items) {
 
 		if (overMaxSelected()) {
 
@@ -103,11 +103,15 @@ async function cleanItems() {
 
 	numSelectedItem = 0;
 
-	if (!selectItemsByClassName("backpack-item-common", 0, opt.DiscardCommonUncommonItems)) return;
-	if (!selectItemsByClassName("backpack-item-uncommon", 1, opt.DiscardCommonUncommonItems)) return;
+	let userLvl = Number(GameDoc.getElementsByClassName("srpg-top-bar-lvl-number")[0].innerText);
+	let noReserve = (userLvl >= 14) ? opt.DiscardAllCommonUncommonItems : false;
+
+	if (!selectItemsByClassName("backpack-item-common", 0, noReserve)) return;
+	if (!selectItemsByClassName("backpack-item-uncommon", 1, noReserve)) return;
 
 	if (opt.CleanDuplicatedRareItems && !selectItemsByClassName("backpack-item-rare", 2, false)) return;
 	if (opt.CleanDuplicatedEpicItems && !selectItemsByClassName("backpack-item-epic", 3, false)) return;
+	if (opt.CleanDuplicatedLegendaryItems && !selectItemsByClassName("backpack-item-legendary", 4, false)) return;
 	
 	console.info("Totally selected " + numSelectedItem + " items");
 }
@@ -115,7 +119,8 @@ async function cleanItems() {
 function autoClean() {
 
 	console.log(">> Auto Clean");
-	GearTab.click();	
+	
+	GearTab.click();
 
 	wait(500).then(() => {
 		
@@ -127,15 +132,19 @@ function autoClean() {
 			btns[1].firstChild.click(); // SELL Button
 		else
 			throw new Error("delete buttons not found");
+
 	}).then(() => {
 
-		wait(100).then(clickButton(BTN_SELL_SELECTED));
+		return wait(100).then(clickButton(BTN_SELL_SELECTED));
+
 	}).catch(() => {
 
 		console.debug("delete buttons not found");
+
 	}).then(() => {
 
-		wait(300).then(FightTab.click());
+		return wait(100).then(FightTab.click());
+
 	});
 }
 

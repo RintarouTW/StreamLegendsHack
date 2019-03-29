@@ -2,13 +2,15 @@
 
 /* Game Options */
 var opt = {
+	DebugMode : false,
 	ForceLowLevel : false,
 	CleanDuplicatedRareItems : false,
 	CleanDuplicatedEpicItems : false,
-	DiscardCommonUncommonItems : true,
-	EnableAutoClean : true,
+	CleanDuplicatedLegendaryItems : false,
+	DiscardAllCommonUncommonItems : false,
+	EnableAutoClean : false,
 	NumNewItemsToAutoClean : 20,
-	MaxCleanItems : 100,
+	CleanItemsLimit : 100,
 	IgnoreRaid : false,
 	HasRaid : false
 };
@@ -20,13 +22,16 @@ var xmlhttp;
 function checkNewRaid() {
 
 	if (!xmlhttp) {
+
 		xmlhttp = new XMLHttpRequest();
+
 		xmlhttp.onreadystatechange = function() {
+
 			if (this.readyState == 4 && this.status == 200) {
 	    		opt.HasRaid = (this.responseText.replace(/[\n]/g,"") == "YES");
 	    		xmlhttp = 0;
 	    	}
-		};		
+		};
 
 		xmlhttp.open("GET", autoRaidURL, true);
 		xmlhttp.setRequestHeader("Cache-Control", "no-cache");
@@ -39,7 +44,7 @@ document.addEventListener("UpdateOptions", event => {
 
 	let data = event.detail;
 
-	for (let key of Object.keys(data)) {
+	for (const key in data) {
 
 		if ( typeof (opt[key]) == typeof (data[key]) ) {
 			console.log("[ " + key + " : " + data[key] + " ]");

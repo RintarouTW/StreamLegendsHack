@@ -6,12 +6,12 @@ function updateOptions(data) {
 	document.dispatchEvent(evt);
 }
 
-function setup() {
+function setup(options) {
 
 	/* the hack script would ask to load options after install too */
 	document.addEventListener("LoadOptions", function(evt) {
 
-		chrome.storage.local.get(['ForceLowLevel', 'CleanDuplicatedRareItems', 'CleanDuplicatedEpicItems'], function(data) {
+		chrome.storage.local.get(Object.keys(options), function(data) {
 
 			updateOptions(data);
 
@@ -46,16 +46,16 @@ function setup() {
 (async () => {
 
 	// Default Configuration
-  	const { DebugMode } = await import("./default.js");
+  	const options = await import("./default.js");
 
-	if (DebugMode) {
+	if (options.DebugMode) {
 		
 		// Insert to the top most frame anyway.
-		if (window.top == window) setup();
+		if (window.top == window) setup(options);
 
 	} else {
 
-		if (document.title == "StreamLegends" /* GameTitle */) setup();
+		if (document.title == "StreamLegends" /* GameTitle */) setup(options);
 
 	}
 

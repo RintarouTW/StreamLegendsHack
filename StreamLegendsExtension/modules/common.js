@@ -25,16 +25,18 @@ function autoContribute() {
 	let btns = GameDoc.getElementsByClassName(contributeBtnClassName);
 
 	// find the contribute btn (selected)
-	for (let i = btns.length - 1; i >= 0; i--) {
+	for (const btn of btns) {
 
-		let containerClassName = btns[i].parentElement.parentElement.parentElement.className;
+		const containerClassName = btn.parentElement.parentElement.parentElement.className;
+		
 		if (containerClassName.includes("srpg-building-selected")) {
-			btns[i].click();
+			btn.click();
 			return;			
 		}
 	}
 
 	if (guildTimer) {
+
 		clearInterval(guildTimer);
 		guildTimer = 0;
 		return;
