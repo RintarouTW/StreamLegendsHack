@@ -102,9 +102,8 @@ async function cleanItems() {
 		btns[0].firstChild.click();	/* click the SELECT button */
 
 	numSelectedItem = 0;
-
-	let userLvl = Number(GameDoc.getElementsByClassName("srpg-top-bar-lvl-number")[0].innerText);
-	let noReserve = (userLvl >= 14) ? opt.DiscardAllCommonUncommonItems : false;
+	
+	let noReserve = (opt.PlayerLevel >= 14) ? opt.DiscardAllCommonUncommonItems : false;
 
 	if (!selectItemsByClassName("backpack-item-common", 0, noReserve)) return;
 	if (!selectItemsByClassName("backpack-item-uncommon", 1, noReserve)) return;

@@ -1,5 +1,8 @@
 'use strict';
 
+import { opt } from "./option.js";
+import { connectToServer } from "./server.js"
+
 /* Commonly Used */
 const isReleaseMode = (window.top != window);
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -16,13 +19,33 @@ function updateFightRounds(numFights) {
 	if (FightRounds) FightRounds.innerHTML = numFights;
 }
 
+// user info
+function getPlayerInfo() {
+
+	// todo click rank tab first
+	const rankTab = GameDoc.getElementById("srpg-nav-tab-RANK");
+
+	rankTab.click();
+
+	return wait(2000).then(() => {
+
+		const rankRow = GameDoc.getElementsByClassName("you")[0];
+		if (rankRow) {
+			opt.PlayerName = rankRow.children[1].firstChild.innerText;
+			opt.PlayerLevel = Number(GameDoc.getElementsByClassName("srpg-top-bar-lvl-number")[0].innerText);
+			console.log("PlayerName: " + opt.PlayerName + " (" + opt.PlayerLevel + ")");
+		}
+		FightTab.click();
+	});
+}
+
 // for auto contribution
 var guildTimer;
 
 function autoContribute() {
 
-	let contributeBtnClassName = "player-api-btn srpg-button srpg-button-reward  btn btn-default";
-	let btns = GameDoc.getElementsByClassName(contributeBtnClassName);
+	const contributeBtnClassName = "player-api-btn srpg-button srpg-button-reward  btn btn-default";
+	const btns = GameDoc.getElementsByClassName(contributeBtnClassName);
 
 	// find the contribute btn (selected)
 	for (const btn of btns) {
@@ -51,7 +74,7 @@ function checkFatalError() {
 	if (errorWindow) {
 		stop();
 		console.debug("fatal error window shows, reload the game.");
-		window.location.reload();
+		wait(3000).then(() => window.location.reload());
 		return true;
 	}
 
@@ -150,7 +173,14 @@ function installHooks(gameDoc, cleanItems, startAutoTimer, stopAutoTimer) {
 	FightRounds = GameDoc.getElementById("FightRounds");
 
 	// load options
-	document.dispatchEvent(new CustomEvent("LoadOptions"));			
+	document.dispatchEvent(new CustomEvent("LoadOptions"));
+
+	if (!isReleaseMode) {
+
+		getPlayerInfo().then(() => {
+			connectToServer(AutoToggle);
+		});
+	} 
 
 	// Auto Start
 	if (sessionStorage.getItem('AutoStart') == "YES") AutoToggle.click();

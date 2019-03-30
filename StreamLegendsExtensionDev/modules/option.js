@@ -12,7 +12,10 @@ var opt = {
 	NumNewItemsToAutoClean : 20,
 	CleanItemsLimit : 100,
 	IgnoreRaid : false,
-	HasRaid : false
+	// following are runtime changed, don't save to storage
+	HasRaid : false,
+	PlayerName : "",
+	PlayerLevel : 0
 };
 
 const autoRaidURL = "http://localhost:8000/raid.txt";	// Auto Raid control server
@@ -45,6 +48,8 @@ document.addEventListener("UpdateOptions", event => {
 	let data = event.detail;
 
 	for (const key in data) {
+
+		if (key == "PlayerName" || key == "PlayerLevel") continue;
 
 		if ( typeof (opt[key]) == typeof (data[key]) ) {
 			console.log("[ " + key + " : " + data[key] + " ]");

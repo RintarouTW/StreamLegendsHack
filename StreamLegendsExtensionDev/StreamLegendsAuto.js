@@ -124,6 +124,8 @@ function onAutoTimer() {
 
 		fightingTicks++;
 
+		opt.PlayerLevel = Number(GameDoc.getElementsByClassName("srpg-top-bar-lvl-number")[0].innerText);
+
 		if (shouldAutoClean) {
 			shouldAutoClean = false;
 			wait(2000).then(autoClean());
