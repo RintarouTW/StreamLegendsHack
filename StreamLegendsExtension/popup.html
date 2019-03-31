@@ -3,47 +3,20 @@
   <head>
     <style>
 div {
-  width : 200px;
+  width : 400px;
   padding: 10px;
 }
-
 body {
   margin: 0;
   padding: 0;
   background: #efefef;
 }
-
-.btn{
-    border: 1px solid #1a1a1a;
-    display: inline-block;
-    padding: 3px;
-    position: relative;
-    text-align: center;
-    transition: background 600ms ease, color 600ms ease;
-}
-
-.installBtn {
-    width: 100px;
-    border: 1px solid #1a1a1a;
-    display: inline-block;
-    padding: 10px 10px 10px 10px;
-    margin-top: 15px;
-    position: relative;
-    left: 100px;
-    text-align: center;
-    transition: background 600ms ease, color 600ms ease;
-}
-
-.installBtn:hover {
-    background: #00b3ff;
-    color:#fff;
-}
-
 label{
     cursor: pointer;
     min-width: 60px;
+    font-weight: medium;
+    font-size: small;
 }
-
 input.toggle {
     display: none;
 }
@@ -59,36 +32,39 @@ input.toggle {
     color:#fff;
     transition: color 200ms;
 }
-
     </style>
   </head>
   <body>
-    <div class="box">      
-      <form name="ForceLowLevel">
-        <p>Force Low Level</p>
-        <input id="toggle-on" type="radio" name="radios" class="toggle toggle-left" value=true>
-        <label for="toggle-on" class="btn">Yes</label>
-        <input id="toggle-off" type="radio" name="radios" class="toggle toggle-right" value=false>
-        <label for="toggle-off" class="btn">No</label>
-      </form>
+    <div class="box">
+        
+        <input id="ForceLowLevel" type="checkbox" name="ForceLowLevel" class="booleanSetting">
+        <label for="ForceLowLevel">Force Low Level</label>
+        <br>
 
-      <form name="CleanDuplicatedRareItems">
-        <p>Clean Duplicated Rare Items</p>
-        <input id="toggle-on2" type="radio" name="radios2" class="toggle toggle-left" value=true>
-        <label for="toggle-on2" class="btn">Yes</label>
-        <input id="toggle-off2" type="radio" name="radios2" class="toggle toggle-right" value=false>
-        <label for="toggle-off2" class="btn">No</label>
-      </form>
+        <input id="IgnoreRaid" type="checkbox" name="IgnoreRaid" class="booleanSetting">
+        <label for="IgnoreRaid">Ignore Raid</label>
+        <br>
 
-      <form name="CleanDuplicatedEpicItems">
-        <p>Clean Duplicated Epic Items</p>
-        <input id="toggle-on3" type="radio" name="radios3" class="toggle toggle-left" value=true>
-        <label for="toggle-on3" class="btn">Yes</label>
-        <input id="toggle-off3" type="radio" name="radios3" class="toggle toggle-right" value=false>
-        <label for="toggle-off3" class="btn">No</label>
-      </form>
+        <input id="CleanDuplicatedRareItems" type="checkbox" name="CleanDuplicatedRareItems" class="booleanSetting">
+        <label for="CleanDuplicatedRareItems">Clean Duplicated Rare Items</label>
+        <br>
 
-      <br>      
+        <input id="CleanDuplicatedEpicItems" type="checkbox" name="CleanDuplicatedEpicItems" class="booleanSetting">
+        <label for="CleanDuplicatedEpicItems">Clean Duplicated Epic Items</label>
+        <br>
+        
+        <input id="CleanDuplicatedLegendaryItems" type="checkbox" name="CleanDuplicatedLegendaryItems" class="booleanSetting">
+        <label for="CleanDuplicatedLegendaryItems">Clean Duplicated Legendary Items</label>
+        <br>
+
+        <input id="DiscardAllCommonUncommonItems" type="checkbox" name="DiscardAllCommonUncommonItems" class="booleanSetting">
+        <label for="DiscardAllCommonUncommonItems">Delete All Common and Uncommon Items (after level >= 14)</label>
+        <br>
+        
+        <input id="EnableAutoClean" type="checkbox" name="EnableAutoClean" class="booleanSetting">
+        <label for="EnableAutoClean">Auto Clean Inventory</label>
+        <br>
+
     </div>
     <script src="popup.js"></script>
   </body>

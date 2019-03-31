@@ -11,10 +11,7 @@
 
 'use strict';
 
-import {
-	opt, 
-	checkNewRaid
-} from "./modules/option.js";
+import { opt } from "./modules/option.js";
 
 import { 
 	isReleaseMode,
@@ -24,7 +21,8 @@ import {
 	wait, 
 	updateFightRounds,
 	installHooks,
-	checkFatalError
+	checkFatalError,
+	startNewRaid
 } from "./modules/common.js";
 
 import { 
@@ -43,6 +41,10 @@ import {
 	cleanItems, 
 	autoClean 
 } from "./modules/clean.js";
+
+import {
+	raidInfoFromBot
+} from "./modules/server.js";
 
 const GameTitle = "StreamLegends";
 
@@ -116,9 +118,44 @@ function install(showError = false) {
 	return false;	// not found
 }
 
+function sendRaidRankingToServer() {
+	// Log the Raid Ranking, update to server.
+	let rows = GameDoc.getElementsByClassName("contribution-entry contribution-row");
+
+	if (rows) {
+		let isTop5 = false;
+		let top5 = [];
+		for(let i = 0; i < 5; i++) {
+			let row = rows[i];
+			if (row) {
+				let str = row.children[0].innerText + " " + row.children[1].innerText + "\t" + row.children[2].innerText;
+				if (row.children[1].innerText == opt.PlayerName) {
+					str = "> " + str;
+					isTop5 = true;
+				}					
+				console.log(str);
+				let numXP = Number(row.children[2].innerText.replace(/[a-z ,]/gi, ''));
+				top5.push( { name: row.children[1].innerText, xp: numXP } );
+			}
+		}
+		
+		raidInfoFromBot("rank", top5);
+		
+		if (!isTop5) {
+			let row = rows[5];
+			if (row) {
+				let str = "< " + row.children[0].innerText + " " + row.children[1].innerText + "\t" + row.children[2].innerText + " >";
+				console.log(str);
+			}
+		}
+	}
+}
+
 function onAutoTimer() {
 
-	if (checkFatalError()) return;	
+	if (checkFatalError()) return;
+
+	if (opt.isPaused) return;
 
 	if (FightTab.className.includes("fight-active")) {
 
@@ -195,12 +232,21 @@ function onAutoTimer() {
 
 				isRaiding = true;
 				console.log(">> Enter Raid ( " + expireText + " )");
+
+				if (!isReleaseMode) raidInfoFromBot("expire", expireText);
+
 				raidLevel.click();
 				return;
 			} else {
 				if (GameDoc.getElementsByClassName("srpg-map-list")[0]) {
 					isRaiding = false;
 					console.log(">> End of Raid");
+
+					// Try to start a new raid
+					if (!isReleaseMode) {
+						startNewRaid();
+						return;
+					}
 				}
 			}
 		}
@@ -237,18 +283,7 @@ function onAutoTimer() {
 			return;
 		}
 
-		// Log the Raid Ranking
-		let rows = GameDoc.getElementsByClassName("contribution-entry contribution-row");
-
-		if (rows) {
-			for(let i = 0; i < 5; i++) {
-				let row = rows[i];
-				if (row) {
-					let str = row.children[0].innerText + " " + row.children[1].innerText + "\t" + row.children[2].innerText;
-					console.log(str);
-				}
-			}
-		}
+		if (!isReleaseMode) sendRaidRankingToServer();
 
 		if (clickButton(BTN_RAID_BACK_TO_MAP)) return;
 
@@ -257,14 +292,11 @@ function onAutoTimer() {
 
 			let mapCloseBtn = GameDoc.getElementsByClassName("srpg-map-close")[0];
 
-			if (mapCloseBtn) {
+			if (mapCloseBtn && opt.HasRaid) {
 
-				checkNewRaid(); // only check new raid in the map state.
-
-				if (opt.HasRaid) {
-					mapCloseBtn.click();
-					return;
-				}
+				opt.HasRaid = false; // check once only.
+				mapCloseBtn.click();
+				return;
 			}
 		}
 
@@ -272,7 +304,12 @@ function onAutoTimer() {
 		if (clickButton(BTN_FIGHT)) {
 
 			let raidXP = GameDoc.getElementsByClassName("raid-progress-xp")[0];
-			if (raidXP) console.log("Raid Progress: " + raidXP.innerText);
+
+			if (raidXP) {
+				
+				if (!isReleaseMode) raidInfoFromBot("progress", raidXP.innerText);
+				console.log("Raid Progress: " + raidXP.innerText);
+			}			
 
 			updateFightRounds((numFights++));
 			console.log("Round -< " + numFights + " >-");

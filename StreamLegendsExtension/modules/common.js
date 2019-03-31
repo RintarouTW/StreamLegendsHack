@@ -1,5 +1,8 @@
 'use strict';
 
+import { opt } from "./option.js";
+import { connectToServer } from "./server.js"
+
 /* Commonly Used */
 const isReleaseMode = (window.top != window);
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -10,19 +13,81 @@ var FightTab;
 var GearTab;
 var AutoToggle;
 var FightRounds;
+var GuildTab;
 
 function updateFightRounds(numFights) {
 
 	if (FightRounds) FightRounds.innerHTML = numFights;
 }
 
+// user info
+function getPlayerInfo() {
+
+	// todo click rank tab first
+	const rankTab = GameDoc.getElementById("srpg-nav-tab-RANK");
+
+	rankTab.click();
+
+	return wait(2000).then(() => {
+
+		const rankRow = GameDoc.getElementsByClassName("you")[0];
+		if (rankRow) {
+			opt.PlayerName = rankRow.children[1].firstChild.innerText;
+			opt.PlayerLevel = Number(GameDoc.getElementsByClassName("srpg-top-bar-lvl-number")[0].innerText);
+			console.log("PlayerName: " + opt.PlayerName + " (" + opt.PlayerLevel + ")");
+		}
+
+		FightTab.click();
+	});
+}
+
+/// start a new raid
+function startNewRaid() {
+
+	GameDoc = window.frames[0].frames[0].document;
+	GuildTab = GameDoc.getElementById("srpg-nav-tab-GUILD");
+	FightTab = GameDoc.getElementById("srpg-nav-tab-FIGHT");		
+
+	GuildTab.click();
+
+	const raidRows = GameDoc.getElementsByClassName("srpg-building-label-toggle");
+
+	raidRows[3].click();
+
+	const buyRaidBtns = GameDoc.getElementsByClassName("srpg-building-item-buy");
+
+	console.log("buyRaidBtns.length = " + buyRaidBtns.length);
+
+	wait(1000).then(() => {
+
+		const btnIdxes = [10, 14, 18, 9, 13, 17, 8, 12, 16];
+
+		for (let x of btnIdxes) {
+			if (buyRaidBtns[x].innerText.includes('5000') ||
+				buyRaidBtns[x].innerText.includes('2500') ||
+				buyRaidBtns[x].innerText.includes('1000')) {
+
+				buyRaidBtns[x].click();
+				console.log(buyRaidBtns[x], "click ", x);
+				return;
+			}
+		}
+	}).then(() => {
+
+		wait(1000).then(() => {
+			FightTab.click();
+		});		
+	});
+}
+
+
 // for auto contribution
 var guildTimer;
 
 function autoContribute() {
 
-	let contributeBtnClassName = "player-api-btn srpg-button srpg-button-reward  btn btn-default";
-	let btns = GameDoc.getElementsByClassName(contributeBtnClassName);
+	const contributeBtnClassName = "player-api-btn srpg-button srpg-button-reward  btn btn-default";
+	const btns = GameDoc.getElementsByClassName(contributeBtnClassName);
 
 	// find the contribute btn (selected)
 	for (const btn of btns) {
@@ -51,7 +116,7 @@ function checkFatalError() {
 	if (errorWindow) {
 		stop();
 		console.debug("fatal error window shows, reload the game.");
-		window.location.reload();
+		wait(3000).then(() => window.location.reload());
 		return true;
 	}
 
@@ -71,11 +136,11 @@ function installHooks(gameDoc, cleanItems, startAutoTimer, stopAutoTimer) {
 	if (!FightTab) return false;
 
 	// Auto Contribute Hook
-	let guildTab = GameDoc.getElementById("srpg-nav-tab-GUILD");
+	GuildTab = GameDoc.getElementById("srpg-nav-tab-GUILD");
 
-	if (!guildTab) return false;
+	if (!GuildTab) return false;
 
-	guildTab.onclick = function() {
+	GuildTab.onclick = function() {
 
 		if (guildTimer) {
 			clearInterval(guildTimer);
@@ -128,6 +193,8 @@ function installHooks(gameDoc, cleanItems, startAutoTimer, stopAutoTimer) {
 
 	AutoToggle.onclick = () => {
 
+		if (opt.isPaused) return;
+
 		AutoToggle.classList.toggle("on");
 		AutoToggle.classList.toggle("off");
 		AutoToggle.className.includes('on') ? startAutoTimer() : stopAutoTimer();
@@ -150,7 +217,14 @@ function installHooks(gameDoc, cleanItems, startAutoTimer, stopAutoTimer) {
 	FightRounds = GameDoc.getElementById("FightRounds");
 
 	// load options
-	document.dispatchEvent(new CustomEvent("LoadOptions"));			
+	document.dispatchEvent(new CustomEvent("LoadOptions"));
+
+	if (!isReleaseMode) {
+
+		getPlayerInfo().then(() => {
+			connectToServer(AutoToggle);
+		});
+	} 
 
 	// Auto Start
 	if (sessionStorage.getItem('AutoStart') == "YES") AutoToggle.click();
@@ -169,5 +243,6 @@ export {
 	wait,
 	installHooks,
 	checkFatalError,
-	updateFightRounds
+	updateFightRounds,
+	startNewRaid
 };

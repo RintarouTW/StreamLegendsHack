@@ -13,6 +13,7 @@ var FightTab;
 var GearTab;
 var AutoToggle;
 var FightRounds;
+var GuildTab;
 
 function updateFightRounds(numFights) {
 
@@ -35,9 +36,50 @@ function getPlayerInfo() {
 			opt.PlayerLevel = Number(GameDoc.getElementsByClassName("srpg-top-bar-lvl-number")[0].innerText);
 			console.log("PlayerName: " + opt.PlayerName + " (" + opt.PlayerLevel + ")");
 		}
+
 		FightTab.click();
 	});
 }
+
+/// start a new raid
+function startNewRaid() {
+
+	GameDoc = window.frames[0].frames[0].document;
+	GuildTab = GameDoc.getElementById("srpg-nav-tab-GUILD");
+	FightTab = GameDoc.getElementById("srpg-nav-tab-FIGHT");		
+
+	GuildTab.click();
+
+	const raidRows = GameDoc.getElementsByClassName("srpg-building-label-toggle");
+
+	raidRows[3].click();
+
+	const buyRaidBtns = GameDoc.getElementsByClassName("srpg-building-item-buy");
+
+	console.log("buyRaidBtns.length = " + buyRaidBtns.length);
+
+	wait(1000).then(() => {
+
+		const btnIdxes = [10, 14, 18, 9, 13, 17, 8, 12, 16];
+
+		for (let x of btnIdxes) {
+			if (buyRaidBtns[x].innerText.includes('5000') ||
+				buyRaidBtns[x].innerText.includes('2500') ||
+				buyRaidBtns[x].innerText.includes('1000')) {
+
+				buyRaidBtns[x].click();
+				console.log(buyRaidBtns[x], "click ", x);
+				return;
+			}
+		}
+	}).then(() => {
+
+		wait(1000).then(() => {
+			FightTab.click();
+		});		
+	});
+}
+
 
 // for auto contribution
 var guildTimer;
@@ -94,11 +136,11 @@ function installHooks(gameDoc, cleanItems, startAutoTimer, stopAutoTimer) {
 	if (!FightTab) return false;
 
 	// Auto Contribute Hook
-	let guildTab = GameDoc.getElementById("srpg-nav-tab-GUILD");
+	GuildTab = GameDoc.getElementById("srpg-nav-tab-GUILD");
 
-	if (!guildTab) return false;
+	if (!GuildTab) return false;
 
-	guildTab.onclick = function() {
+	GuildTab.onclick = function() {
 
 		if (guildTimer) {
 			clearInterval(guildTimer);
@@ -151,6 +193,8 @@ function installHooks(gameDoc, cleanItems, startAutoTimer, stopAutoTimer) {
 
 	AutoToggle.onclick = () => {
 
+		if (opt.isPaused) return;
+
 		AutoToggle.classList.toggle("on");
 		AutoToggle.classList.toggle("off");
 		AutoToggle.className.includes('on') ? startAutoTimer() : stopAutoTimer();
@@ -199,5 +243,6 @@ export {
 	wait,
 	installHooks,
 	checkFatalError,
-	updateFightRounds
+	updateFightRounds,
+	startNewRaid
 };

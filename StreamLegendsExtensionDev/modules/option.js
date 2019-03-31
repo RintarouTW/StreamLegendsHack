@@ -14,33 +14,10 @@ var opt = {
 	IgnoreRaid : false,
 	// following are runtime changed, don't save to storage
 	HasRaid : false,
+	isPaused : false,
 	PlayerName : "",
 	PlayerLevel : 0
 };
-
-const autoRaidURL = "http://localhost:8000/raid.txt";	// Auto Raid control server
-
-var xmlhttp;
-
-function checkNewRaid() {
-
-	if (!xmlhttp) {
-
-		xmlhttp = new XMLHttpRequest();
-
-		xmlhttp.onreadystatechange = function() {
-
-			if (this.readyState == 4 && this.status == 200) {
-	    		opt.HasRaid = (this.responseText.replace(/[\n]/g,"") == "YES");
-	    		xmlhttp = 0;
-	    	}
-		};
-
-		xmlhttp.open("GET", autoRaidURL, true);
-		xmlhttp.setRequestHeader("Cache-Control", "no-cache");
-		xmlhttp.send();
-	}
-}
 
 /* Handle options changed event from content script */
 document.addEventListener("UpdateOptions", event => {
@@ -61,4 +38,4 @@ document.addEventListener("UpdateOptions", event => {
 	}
 });
 
-export {opt, checkNewRaid};
+export { opt };
