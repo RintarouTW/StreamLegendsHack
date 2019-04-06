@@ -1,7 +1,7 @@
 'use strict';
 
 import { opt } from "./option.js";
-import { connectToServer } from "./server.js"
+import { connectToServer, raidInfoFromBot } from "./server.js"
 
 /* Commonly Used */
 const isReleaseMode = (window.top != window);
@@ -28,13 +28,25 @@ function getPlayerInfo() {
 
 	rankTab.click();
 
-	return wait(2000).then(() => {
+	return wait(3000).then(() => {
 
 		const rankRow = GameDoc.getElementsByClassName("you")[0];
+
 		if (rankRow) {
-			opt.PlayerName = rankRow.children[1].firstChild.innerText;
+			
 			opt.PlayerLevel = Number(GameDoc.getElementsByClassName("srpg-top-bar-lvl-number")[0].innerText);
-			console.log("PlayerName: " + opt.PlayerName + " (" + opt.PlayerLevel + ")");
+
+			if (rankRow.children[1].firstChild.innerText != "")
+				opt.PlayerName = rankRow.children[1].firstChild.innerText;
+			
+			document.title = opt.PlayerName;
+
+			console.log(`Name: ${opt.PlayerName} Level: ${opt.PlayerLevel}`);
+
+			if (!opt.isReleaseMode) {
+				const num = Number(opt.PlayerName.replace(/[a-z ]/gi, ''));
+				window.moveTo( 320 * (num % 2), 22);
+			}
 		}
 
 		FightTab.click();
@@ -44,7 +56,8 @@ function getPlayerInfo() {
 /// start a new raid
 function startNewRaid() {
 
-	GameDoc = window.frames[0].frames[0].document;
+	if (opt.AutoStartNewRaid == 0) return;
+
 	GuildTab = GameDoc.getElementById("srpg-nav-tab-GUILD");
 	FightTab = GameDoc.getElementById("srpg-nav-tab-FIGHT");		
 
@@ -56,22 +69,55 @@ function startNewRaid() {
 
 	const buyRaidBtns = GameDoc.getElementsByClassName("srpg-building-item-buy");
 
-	console.log("buyRaidBtns.length = " + buyRaidBtns.length);
+	console.log(`buyRaidBtns.length = ${buyRaidBtns.length}`);
 
 	wait(1000).then(() => {
 
-		const btnIdxes = [10, 14, 18, 9, 13, 17, 8, 12, 16];
+		const btnIdxes = [10, 14, 18, 9, 13, 17, 8, 12, 16, 7, 11, 15];
 
-		for (let x of btnIdxes) {
+		if (btnIdxes[10].innerText == "OTHER RAID ACTIVE")
+			return; // other raid has been activated.
+
+		const startedIdx = btnIdxes.length - 3 * opt.AutoStartNewRaid;
+
+		for (let i = startedIdx; i < btnIdxes.length; i++) {
+
+			let x = btnIdxes[i];
+
+			if (buyRaidBtns[x].innerText == "OTHER RAID ACTIVE")
+				return; // other raid has been activated.
+
+
 			if (buyRaidBtns[x].innerText.includes('5000') ||
 				buyRaidBtns[x].innerText.includes('2500') ||
-				buyRaidBtns[x].innerText.includes('1000')) {
+				buyRaidBtns[x].innerText.includes('1000') ||
+				buyRaidBtns[x].innerText.includes('500')) {
 
 				buyRaidBtns[x].click();
-				console.log(buyRaidBtns[x], "click ", x);
+				console.log(buyRaidBtns[x], "clicked ", buyRaidBtns[x].innerText);
+				raidInfoFromBot("AutoStartNewRaid", opt.PlayerName);
 				return;
 			}
 		}
+
+		// if nothing found, try to find from the begining again.
+		for (let x of btnIdxes) {
+
+			if (buyRaidBtns[x].innerText == "OTHER RAID ACTIVE")
+				return; // other raid has been activated.
+
+			if (buyRaidBtns[x].innerText.includes('5000') ||
+				buyRaidBtns[x].innerText.includes('2500') ||
+				buyRaidBtns[x].innerText.includes('1000') ||
+				buyRaidBtns[x].innerText.includes('500')) {
+
+				buyRaidBtns[x].click();
+				console.log(buyRaidBtns[x], "clicked ", buyRaidBtns[x].innerText);
+				raidInfoFromBot("AutoStartNewRaid", opt.PlayerName);
+				return;
+			}
+		}
+
 	}).then(() => {
 
 		wait(1000).then(() => {
@@ -112,7 +158,7 @@ function checkFatalError() {
 
 	/* ONWARDS Button when Errors : Fail safe - reload & auto start */
 	let errorWindow = GameDoc.getElementsByClassName("StreamRpgError srpg-takeover-window")[0];
-
+	let spinner = GameDoc.getElementsByClassName("spinner")[0];
 	if (errorWindow) {
 		stop();
 		console.debug("fatal error window shows, reload the game.");
@@ -208,8 +254,9 @@ function installHooks(gameDoc, cleanItems, startAutoTimer, stopAutoTimer) {
 	let toggleContainer = document.createElement("div");
 
 	toggleContainer.className = "StreamRpgAutoFightToggle";
-	toggleContainer.innerHTML = '<div class="auto-fight-text" style="font-size: smaller;">AUTO<p id="FightRounds" ' +
-	'style="margin: 0px; font-size: xx-small; font-weight: lighter; font-family: DINPro-Regular; text-align: right;"></p></div>';
+	toggleContainer.innerHTML = `<div class="auto-fight-text" style="font-size: smaller;">AUTO
+	<p id="FightRounds" style="margin: 0px; font-size: xx-small; font-weight: lighter; font-family: DINPro-Regular; text-align: right;"></p>
+	</div>`;
 	toggleContainer.appendChild(AutoToggle);
 	
 	topbar.appendChild(toggleContainer);

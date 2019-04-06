@@ -1,4 +1,4 @@
-import { opt } from "./option.js";
+import { opt, updateOptions } from "./option.js";
 import io from "./socket.io.module.js";
 
 var AutoToggle;
@@ -29,26 +29,32 @@ function connectToServer(autoToggle) {
                 window.location.reload();
             break;
             case "pause":
-                opt.isPaused = true;
                 AutoToggle.children[1].style.backgroundColor = "#ffdc2b";
-                socket.emit('updateBotInfo', opt /* user info */); // update info to server
+                opt.isPaused = true;
             break;
             case "resume":
-                opt.isPaused = false;
                 AutoToggle.children[1].style.backgroundColor = "#2fea85";
-                socket.emit('updateBotInfo', opt /* user info */); // update info to server
+                opt.isPaused = false;                
             break;
             case "updateOptions":
-                document.dispatchEvent(new CustomEvent("UpdateOptions", { detail: data }) );
+                updateOptions(data);
             break;
         }
+
+        // send the updated info to server
+        updateBotInfo();
     });
 
+    
     socket.on('connect', function() {
 
         // auto subscribe
-        socket.emit('updateBotInfo', opt /* user info */);
+        socket.emit('subscribe', opt.PlayerName);
     });
+}
+
+function updateBotInfo() {
+    socket.emit('updateBotInfo', opt /* user info */); 
 }
 
 function raidInfoFromBot (infoType, info) {
@@ -56,4 +62,4 @@ function raidInfoFromBot (infoType, info) {
         socket.emit('raidInfoFromBot', infoType, info);
 }
 
-export { connectToServer, raidInfoFromBot }
+export { connectToServer, raidInfoFromBot, updateBotInfo }

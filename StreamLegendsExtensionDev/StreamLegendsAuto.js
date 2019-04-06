@@ -47,6 +47,7 @@ import {
 } from "./modules/server.js";
 
 const GameTitle = "StreamLegends";
+const AutoTimerTickInterval = 700;
 
 var autoTimer;
 var prevLevel = false;
@@ -71,8 +72,8 @@ function stopAutoTimer() {
 
 	if (numFights == 0) return;
 
-	console.info("Avg Fight Costs ( " + totalFightingTicks + " / " + numFights + " ) : " + (totalFightingTicks/numFights).toFixed(2) + " seconds");
-	console.info("Avg Drops Per Fight ( " + numNewItems + " / " + numFights + " ) : " + (numNewItems * 100 / numFights).toFixed(2) + "%");
+	console.info(`Avg Fight Costs ( ${totalFightingTicks} / ${numFights} ) : ${(totalFightingTicks/numFights).toFixed(2)} seconds`);
+	console.info(`Avg Drops Per Fight ( ${numNewItems} / ${numFights} ) : ${(numNewItems * 100 / numFights).toFixed(2)} %`);
 }
 
 function startAutoTimer() {
@@ -85,7 +86,7 @@ function startAutoTimer() {
 	totalFightingTicks = 0;
 	isOnwarding = 0;
 
-	autoTimer = setInterval(onAutoTimer, 700);
+	autoTimer = setInterval(onAutoTimer, AutoTimerTickInterval);
 }
 
 function install(showError = false) {
@@ -112,8 +113,9 @@ function install(showError = false) {
 			return gameDoc;
 	}
 
+	
 	if (showError)
-		console.debug("Failed to find " + GameTitle);
+		console.debug(`Failed to find ${GameTitle}`);
 
 	return false;	// not found
 }
@@ -128,7 +130,8 @@ function sendRaidRankingToServer() {
 		for(let i = 0; i < 5; i++) {
 			let row = rows[i];
 			if (row) {
-				let str = row.children[0].innerText + " " + row.children[1].innerText + "\t" + row.children[2].innerText;
+				
+				let str = `${row.children[0].innerText} ${row.children[1].innerText} \t ${row.children[2].innerText}`;
 				if (row.children[1].innerText == opt.PlayerName) {
 					str = "> " + str;
 					isTop5 = true;
@@ -144,8 +147,13 @@ function sendRaidRankingToServer() {
 		if (!isTop5) {
 			let row = rows[5];
 			if (row) {
-				let str = "< " + row.children[0].innerText + " " + row.children[1].innerText + "\t" + row.children[2].innerText + " >";
-				console.log(str);
+
+				let str = `< ${row.children[0].innerText} ${row.children[1].innerText} \t ${row.children[2].innerText} >`;
+				console.log(str, row.children[2].innerText);
+				
+				let numXP = Number(row.children[2].innerText.replace(/[a-z ,]/gi, ''));
+				
+				raidInfoFromBot("outOfRank", [{ name: row.children[1].innerText, xp: numXP }])
 			}
 		}
 	}
@@ -164,8 +172,10 @@ function onAutoTimer() {
 		opt.PlayerLevel = Number(GameDoc.getElementsByClassName("srpg-top-bar-lvl-number")[0].innerText);
 
 		if (shouldAutoClean) {
-			shouldAutoClean = false;
-			wait(2000).then(autoClean());
+			shouldAutoClean = false;			
+			wait(2000).then(() => {
+				autoClean();
+			});
 		}
 		return;
 	}
@@ -175,7 +185,7 @@ function onAutoTimer() {
 		// end fighting
 		if (fightingTicks > 0) {
 			totalFightingTicks += fightingTicks;
-			console.log("Fight ends in " + fightingTicks + " / " + totalFightingTicks + " seconds");
+			console.log(`Fight ends in ${fightingTicks} / ${totalFightingTicks} seconds`);
 			fightingTicks = 0;	/* reset ticks */
 		}
 
@@ -196,7 +206,7 @@ function onAutoTimer() {
 			/* ONWARDS Button when got new item */
 			if (clickButton(BTN_ONWARDS_NEW_ITEM)) {			
 				numNewItems++;
-				console.log("Got ( " + numNewItems + " ) New Items");
+				console.log(`Got ( ${numNewItems} ) New Items`);
 				if (opt.EnableAutoClean 
 					&& (numNewItems % opt.NumNewItemsToAutoClean == 0))
 					shouldAutoClean = true;
@@ -231,7 +241,7 @@ function onAutoTimer() {
 				let expireText = GameDoc.getElementsByClassName("srpg-map-list-node-lvl font-medium")[0].innerText;
 
 				isRaiding = true;
-				console.log(">> Enter Raid ( " + expireText + " )");
+				console.log(`>> Enter Raid ( ${expireText} )`);
 
 				if (!isReleaseMode) raidInfoFromBot("expire", expireText);
 
@@ -243,7 +253,7 @@ function onAutoTimer() {
 					console.log(">> End of Raid");
 
 					// Try to start a new raid
-					if (!isReleaseMode) {
+					if (!opt.IgnoreRaid && !isReleaseMode) {
 						startNewRaid();
 						return;
 					}
@@ -275,7 +285,7 @@ function onAutoTimer() {
 
 			let lvlIdx = (prevLevel) ? (levels.length - 1) : (levels.length - 2);
 
-			console.log(">> Select Level item[" + lvlIdx + "]");
+			console.log(`>> Select Level item[${lvlIdx}]`);
 
 			prevLevel = !prevLevel;
 
@@ -295,6 +305,7 @@ function onAutoTimer() {
 			if (mapCloseBtn && opt.HasRaid) {
 
 				opt.HasRaid = false; // check once only.
+				updateBotInfo();	 // opt is changed, send the updated info to server.
 				mapCloseBtn.click();
 				return;
 			}
@@ -303,16 +314,25 @@ function onAutoTimer() {
 		// click FIGHT!
 		if (clickButton(BTN_FIGHT)) {
 
+			// stop the timer for 1s for the server delay to improve the robusty.
+			if (autoTimer) clearInterval(autoTimer);
+			autoTimer = 0;
+			wait(1000).then(() => {
+				//restart the auto timer.
+				if (AutoToggle.className.includes('on'))
+					autoTimer = setInterval(onAutoTimer, AutoTimerTickInterval);
+			});
+
 			let raidXP = GameDoc.getElementsByClassName("raid-progress-xp")[0];
 
 			if (raidXP) {
 				
 				if (!isReleaseMode) raidInfoFromBot("progress", raidXP.innerText);
-				console.log("Raid Progress: " + raidXP.innerText);
+				console.log(`Raid Progress: ${raidXP.innerText}`);
 			}			
 
 			updateFightRounds((numFights++));
-			console.log("Round -< " + numFights + " >-");
+			console.log(`Round -< ${numFights} >-`);
 			return;
 		}
 
