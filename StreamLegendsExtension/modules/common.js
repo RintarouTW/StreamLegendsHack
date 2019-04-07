@@ -69,53 +69,63 @@ function startNewRaid() {
 
 	const buyRaidBtns = GameDoc.getElementsByClassName("srpg-building-item-buy");
 
-	console.log(`buyRaidBtns.length = ${buyRaidBtns.length}`);
+	//console.log(`buyRaidBtns.length = ${buyRaidBtns.length}`);
 
 	wait(1000).then(() => {
 
-		const btnIdxes = [10, 14, 18, 9, 13, 17, 8, 12, 16, 7, 11, 15];
+		let raidIndexes = [ [], [], [], [] ];
 
-		if (btnIdxes[10].innerText == "OTHER RAID ACTIVE")
-			return; // other raid has been activated.
-
-		const startedIdx = btnIdxes.length - 3 * opt.AutoStartNewRaid;
-
-		for (let i = startedIdx; i < btnIdxes.length; i++) {
-
-			let x = btnIdxes[i];
-
-			if (buyRaidBtns[x].innerText == "OTHER RAID ACTIVE")
-				return; // other raid has been activated.
-
-
-			if (buyRaidBtns[x].innerText.includes('5000') ||
-				buyRaidBtns[x].innerText.includes('2500') ||
-				buyRaidBtns[x].innerText.includes('1000') ||
-				buyRaidBtns[x].innerText.includes('500')) {
-
-				buyRaidBtns[x].click();
-				console.log(buyRaidBtns[x], "clicked ", buyRaidBtns[x].innerText);
-				raidInfoFromBot("AutoStartNewRaid", opt.PlayerName);
-				return;
+		for (let i = buyRaidBtns.length - 1; i >= 0; i--) {
+			switch(buyRaidBtns[i].innerText) {
+				case "5000 GOLD":
+					raidIndexes[3].push(i);
+				break;
+				case "2500 GOLD":
+					raidIndexes[2].push(i);
+				break;
+				case "1000 GOLD":
+					raidIndexes[1].push(i);
+				break;
+				case "500 GOLD":
+					raidIndexes[0].push(i);
+				break;
+				case "OTHER RAID ACTIVE":
+					return;
+				break;
 			}
 		}
 
+		raidIndexes[3] = [...raidIndexes[3], ...raidIndexes[2], ...raidIndexes[1], ...raidIndexes[0]];
+		raidIndexes[2] = [...raidIndexes[2], ...raidIndexes[1], ...raidIndexes[0]];
+		raidIndexes[1] = [...raidIndexes[1], ...raidIndexes[0]];
+
+		console.log(raidIndexes[3]);
+
+		let target = raidIndexes[(opt.AutoStartNewRaid - 1)];
+
+		for (let idx of target) {
+
+			// check it again before click it.
+			if (buyRaidBtns[idx].innerText == "OTHER RAID ACTIVE") return;
+
+			buyRaidBtns[idx].click();
+			console.log(buyRaidBtns[idx], "clicked ", buyRaidBtns[idx].innerText);
+			raidInfoFromBot("AutoStartNewRaid", opt.PlayerName);
+			return;
+		}
+
 		// if nothing found, try to find from the begining again.
-		for (let x of btnIdxes) {
+		target = raidIndexes[3];
 
-			if (buyRaidBtns[x].innerText == "OTHER RAID ACTIVE")
-				return; // other raid has been activated.
+		for (let idx of target) {
 
-			if (buyRaidBtns[x].innerText.includes('5000') ||
-				buyRaidBtns[x].innerText.includes('2500') ||
-				buyRaidBtns[x].innerText.includes('1000') ||
-				buyRaidBtns[x].innerText.includes('500')) {
+			// check it again before click it.
+			if (buyRaidBtns[idx].innerText == "OTHER RAID ACTIVE") return;
 
-				buyRaidBtns[x].click();
-				console.log(buyRaidBtns[x], "clicked ", buyRaidBtns[x].innerText);
-				raidInfoFromBot("AutoStartNewRaid", opt.PlayerName);
-				return;
-			}
+			buyRaidBtns[idx].click();
+			console.log(buyRaidBtns[idx], "clicked ", buyRaidBtns[idx].innerText);
+			raidInfoFromBot("AutoStartNewRaid", opt.PlayerName);
+			return;
 		}
 
 	}).then(() => {
