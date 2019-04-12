@@ -11,9 +11,9 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 var GameDoc;
 var FightTab;
 var GearTab;
+var GuildTab;
 var AutoToggle;
 var FightRounds;
-var GuildTab;
 
 function updateFightRounds(numFights) {
 
@@ -58,9 +58,6 @@ function startNewRaid() {
 
 	if (opt.AutoStartNewRaid == 0) return;
 
-	GuildTab = GameDoc.getElementById("srpg-nav-tab-GUILD");
-	FightTab = GameDoc.getElementById("srpg-nav-tab-FIGHT");		
-
 	GuildTab.click();
 
 	const raidRows = GameDoc.getElementsByClassName("srpg-building-label-toggle");
@@ -95,11 +92,9 @@ function startNewRaid() {
 			}
 		}
 
-		raidIndexes[3] = [...raidIndexes[3], ...raidIndexes[2], ...raidIndexes[1], ...raidIndexes[0]];
-		raidIndexes[2] = [...raidIndexes[2], ...raidIndexes[1], ...raidIndexes[0]];
 		raidIndexes[1] = [...raidIndexes[1], ...raidIndexes[0]];
-
-		console.log(raidIndexes[3]);
+		raidIndexes[2] = [...raidIndexes[2], ...raidIndexes[1]];
+		raidIndexes[3] = [...raidIndexes[3], ...raidIndexes[2]];
 
 		let target = raidIndexes[(opt.AutoStartNewRaid - 1)];
 
@@ -138,7 +133,7 @@ function startNewRaid() {
 
 
 // for auto contribution
-var guildTimer;
+let guildTimer;
 
 function autoContribute() {
 
@@ -168,7 +163,7 @@ function checkFatalError() {
 
 	/* ONWARDS Button when Errors : Fail safe - reload & auto start */
 	let errorWindow = GameDoc.getElementsByClassName("StreamRpgError srpg-takeover-window")[0];
-	let spinner = GameDoc.getElementsByClassName("spinner")[0];
+
 	if (errorWindow) {
 		stop();
 		console.debug("fatal error window shows, reload the game.");
@@ -276,6 +271,10 @@ function installHooks(gameDoc, cleanItems, startAutoTimer, stopAutoTimer) {
 	// load options
 	document.dispatchEvent(new CustomEvent("LoadOptions"));
 
+	document.addEventListener("StartNewRaid", (evt) => { 
+		startNewRaid();
+	});
+
 	if (!isReleaseMode) {
 
 		getPlayerInfo().then(() => {
@@ -300,6 +299,5 @@ export {
 	wait,
 	installHooks,
 	checkFatalError,
-	updateFightRounds,
-	startNewRaid
+	updateFightRounds
 };

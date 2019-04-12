@@ -14,7 +14,7 @@ function connectToServer(autoToggle) {
     // listen to the commands
     socket.on('commandToBot', function (cmd, players, data) {
 
-        console.log(cmd, players, data);
+        //console.log(cmd, players, data);
 
         if(!players.includes(opt.PlayerName)) return;
         
@@ -35,6 +35,10 @@ function connectToServer(autoToggle) {
             case "resume":
                 AutoToggle.children[1].style.backgroundColor = "#2fea85";
                 opt.isPaused = false;                
+            break;
+            case "startNewRaid":
+                let evt = new CustomEvent("StartNewRaid", {});
+                document.dispatchEvent(evt);
             break;
             case "updateOptions":
                 updateOptions(data);

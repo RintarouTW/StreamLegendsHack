@@ -21,8 +21,7 @@ import {
 	wait, 
 	updateFightRounds,
 	installHooks,
-	checkFatalError,
-	startNewRaid
+	checkFatalError
 } from "./modules/common.js";
 
 import { 
@@ -48,6 +47,7 @@ import {
 
 const GameTitle = "StreamLegends";
 const AutoTimerTickInterval = 700;
+var numFailedToInstall = 0;
 
 var autoTimer;
 var prevLevel = false;
@@ -249,14 +249,16 @@ function onAutoTimer() {
 				return;
 			} else {
 				if (GameDoc.getElementsByClassName("srpg-map-list")[0]) {
-					isRaiding = false;
+
 					console.log(">> End of Raid");
 
-					// Try to start a new raid
-					if (!opt.IgnoreRaid && !isReleaseMode) {
-						startNewRaid();
+					// Ask Server's permission to start a new raid.
+					if (!opt.IgnoreRaid && !isReleaseMode && isRaiding) {
+						raidInfoFromBot("AskNewRaidPermission", opt.PlayerName);
 						return;
 					}
+
+					isRaiding = false;					
 				}
 			}
 		}
@@ -341,9 +343,13 @@ function onAutoTimer() {
 
 }
 
-(function RetryInstallWhileGameLoading() {
+(function RetryInstallWhileGameLoading() {	
 
 	if(!install())
 		wait(1000).then(RetryInstallWhileGameLoading);
+
+	// in case the server returned 504 and the game stopped on the spinner.
+	if (numFailedToInstall++ > 150)
+		window.location.reload();
 
 })(); // Auto Install
