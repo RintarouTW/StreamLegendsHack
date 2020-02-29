@@ -13,10 +13,11 @@
 
 import { opt } from "./modules/option.js";
 
-import { 
+import {
 	isReleaseMode,
 	GameDoc,
 	FightTab,
+	GearTab,
 	AutoToggle,
 	wait, 
 	updateFightRounds,
@@ -24,7 +25,7 @@ import {
 	checkFatalError
 } from "./modules/common.js";
 
-import { 
+import {
 	BTN_COLLECT_LOOT,
 	BTN_RAID_BACK_TO_MAP,
 	BTN_ONWARDS_FAIL_SAVE,
@@ -36,7 +37,7 @@ import {
 	clickButton
 } from "./modules/button.js";
 
-import { 
+import {
 	cleanItems, 
 	autoClean 
 } from "./modules/clean.js";
@@ -55,6 +56,8 @@ var shouldAutoClean = false;
 
 var isRaiding = false;
 var isOnwarding = 0;
+
+var monsterName = "";
 
 /* Statistics */
 var fightingTicks = 0;	/* num seconds of the last fight */
@@ -124,39 +127,75 @@ function sendRaidRankingToServer() {
 	// Log the Raid Ranking, update to server.
 	let rows = GameDoc.getElementsByClassName("contribution-entry contribution-row");
 
-	if (rows) {
-		let isTop5 = false;
-		let top5 = [];
-		for(let i = 0; i < 5; i++) {
-			let row = rows[i];
-			if (row) {
-				
-				let str = `${row.children[0].innerText} ${row.children[1].innerText} \t ${row.children[2].innerText}`;
-				if (row.children[1].innerText == opt.PlayerName) {
-					str = "> " + str;
-					isTop5 = true;
-				}					
-				console.log(str);
-				let numXP = Number(row.children[2].innerText.replace(/[a-z ,]/gi, ''));
-				top5.push( { name: row.children[1].innerText, xp: numXP } );
-			}
-		}
-		
-		raidInfoFromBot("rank", top5);
-		
-		if (!isTop5) {
-			let row = rows[5];
-			if (row) {
+	if (!rows) return;
 
-				let str = `< ${row.children[0].innerText} ${row.children[1].innerText} \t ${row.children[2].innerText} >`;
-				console.log(str, row.children[2].innerText);
-				
-				let numXP = Number(row.children[2].innerText.replace(/[a-z ,]/gi, ''));
-				
-				raidInfoFromBot("outOfRank", [{ name: row.children[1].innerText, xp: numXP }])
-			}
+	let isTop5 = false;
+	let top5 = [];
+
+	for(let i = 0; i < 5; i++) {
+		let row = rows[i];
+		if (!row) continue;
+			
+		let str = `${row.children[0].innerText} ${row.children[1].innerText} \t ${row.children[2].innerText}`;
+		if (row.children[1].innerText == opt.PlayerName) {
+			str = "> " + str;
+			isTop5 = true;
+		}					
+		console.log(str);
+		let numXP = Number(row.children[2].innerText.replace(/[a-z ,]/gi, ''));
+		top5.push( { name: row.children[1].innerText, xp: numXP } );
+	}
+	
+	raidInfoFromBot("rank", top5);
+	
+	if (!isTop5) {
+		let row = rows[5];
+		if (row) {
+
+			let str = `< ${row.children[0].innerText} ${row.children[1].innerText} \t ${row.children[2].innerText} >`;
+			console.log(str, row.children[2].innerText);
+			
+			let numXP = Number(row.children[2].innerText.replace(/[a-z ,]/gi, ''));
+			
+			raidInfoFromBot("outOfRank", [{ name: row.children[1].innerText, xp: numXP }])
 		}
 	}
+}
+
+
+function autoEquip() {
+	var targetItem = "";
+	switch(monsterName) {
+		case "TRAPPED HALLWAY":
+		targetItem = "backpack-item-item_scifi_head_helmet_necrovores_tier_";
+		break;
+		case "OBSERVATORY":
+		targetItem = "backpack-item-item_fantasy_head_helmet_dragonhide_tier_";
+		break;
+		default:
+		return;
+	}
+
+	GearTab.click();
+
+	for (let i = 4; i > 0; i--) {
+		let targetClassName = targetItem + i + " backpack-item-legendary";
+		console.log(targetClassName);
+		let item = GameDoc.getElementsByClassName(targetClassName)[0];
+		if (item ) {
+			item.click();
+			let equipBtn = GameDoc.getElementsByClassName("srpg-active-item-actions-action")[0];
+			if (equipBtn.innerText == "EQUIP") {
+				equipBtn.click();
+				//console.log("equipped");
+			}
+			break;
+		}
+	}
+
+	monsterName = "";	// clear it for auto clean back to work.
+	
+	FightTab.click();	// back to fight
 }
 
 function onAutoTimer() {
@@ -169,13 +208,20 @@ function onAutoTimer() {
 
 		fightingTicks++;
 
-		opt.PlayerLevel = Number(GameDoc.getElementsByClassName("srpg-top-bar-lvl-number")[0].innerText);
+		if ((monsterName == "TRAPPED HALLWAY") || (monsterName == "OBSERVATORY")) {
 
-		if (shouldAutoClean) {
-			shouldAutoClean = false;			
-			wait(2000).then(() => {
-				autoClean();
-			});
+			autoEquip();
+
+		} else {
+
+			opt.PlayerLevel = Number(GameDoc.getElementsByClassName("srpg-top-bar-lvl-number")[0].innerText);
+
+			if (shouldAutoClean) {
+				shouldAutoClean = false;			
+				wait(2000).then(() => {
+					autoClean();
+				});
+			}
 		}
 		return;
 	}
@@ -313,8 +359,12 @@ function onAutoTimer() {
 			}
 		}
 
+		monsterName = GameDoc.getElementsByClassName("srpg-map-actions-fight-details-title")[0];
+		if (monsterName) 
+			monsterName = monsterName.innerText;
+
 		// click FIGHT!
-		if (clickButton(BTN_FIGHT)) {
+		if (clickButton(BTN_FIGHT)) {			
 
 			// stop the timer for 1s for the server delay to improve the robusty.
 			if (autoTimer) clearInterval(autoTimer);

@@ -19,7 +19,7 @@ function setup(options) {
 
 	});
 
-	/* Config chanced by Popup/Option page */
+	/* Config changed by Popup/Option page */
 	chrome.storage.onChanged.addListener(function(changes, namespace) {
 		
 		if(namespace != "local") return;

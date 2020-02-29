@@ -1,0 +1,87 @@
+
+// auto start a new raid
+row arrow = document.getElementsByClassName("srpg-building-label-toggle")[3].click(); (3-5)
+player-api-btn srpg-building-item-buy srpg-button srpg-button-secondary srpg-btn-disabled btn btn-default
+
+document.getElementsByClassName("srpg-building-item-buy")[10/14/18] (9/13/17)
+
+
+// raiding order auto arrangement.
+
+
+onconnection
+- subscribe with lvl + user name + current options
+- name is the room to join
+- join "server command room" to accept commands
+
+
+server -> client commands (broadcast or by selected)
+1. reload()
+2. start() / stop()
+3. has new raid + timestamp
+4. set options( force low level )
+
+client -> server (report)
+1. raid is ended
+2. lvl, user name, saved options changed
+
+ondisconnect
+
+
+------- AutoLoop -----
+
+1. ERROR WINDOW => reload
+
+2. fight-active => 
+   2.1 fightingTicks++; 
+   2.2 if timeout => reload
+   2.3 check fight ends (unclaimed-reward)
+   return;
+
+2. unclaimed-reward => Victory/Defeated
+   ending fightingTicks
+   click onwards
+   isOnwarding++;
+   if timeout => reload
+   return;
+
+3. fight-ready
+	ending onwarding
+
+3.1 map selection => click fight
+3.2 
+
+
+MAP SELECTION
+
+
+
+FIGHTING
+
+[AfterFight]
+
+Victory
+
+fight-results-row fight-results-header dark-blue-bg VICTORY
+
+1. unclaimed-reward, CAMBAT LOG + COLLECT LOOT (srpg-button available post-fight-button srpg-button-reward btn btn-default) -> unclaimed-reward, EQUIP NOW + ONWARDS(player-api-btn srpg-button srpg-button-continue btn btn-default)
+
+2. unclaimed-reward, CAMBAT LOG + ONWARDS (player-api-btn srpg-button available post-fight-button btn btn-default) -> fight-ready
+
+Defeat
+
+fight-results-row fight-results-header dark-blue-bg DEFEAT
+
+3. unclaimed-reward, CAMBAT LOG + ONWARDS (player-api-btn srpg-button available post-fight-button btn btn-default)
+
+srpg-map-close
+srpg-map-list
+
+nav-tab-FIGHT
+
+fight-active
+fight-ready + "player-api-btn srpg-button btn btn-default" <FIGHT>
+unclaimed-reward
+
+
+player-api-btn srpg-button srpg-button-secondary available post-fight-button btn btn-default

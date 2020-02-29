@@ -12,35 +12,35 @@ function connectToServer(autoToggle) {
     socket = io('http://localhost');
 
     // listen to the commands
-    socket.on('commandToBot', function (cmd, players, data) {
+    socket.on('commandToBot', function (cmd, targetPlayers, data) {
 
-        //console.log(cmd, players, data);
+        //console.log(cmd, targetPlayers, data);
 
-        if(!players.includes(opt.PlayerName)) return;
+        if(!targetPlayers.includes(opt.PlayerName)) return;
         
         switch (cmd) {
-            case "stop":
+            case "Stop":
                 if (AutoToggle.className.includes('on')) AutoToggle.click();
             break;
-            case "start":
+            case "Start":
                 if (AutoToggle.className.includes('off')) AutoToggle.click();
             break;
-            case "reload":
+            case "Reload":
                 window.location.reload();
             break;
-            case "pause":
+            case "Pause":
                 AutoToggle.children[1].style.backgroundColor = "#ffdc2b";
                 opt.isPaused = true;
             break;
-            case "resume":
+            case "Resume":
                 AutoToggle.children[1].style.backgroundColor = "#2fea85";
                 opt.isPaused = false;                
             break;
-            case "startNewRaid":
+            case "StartNewRaid":
                 let evt = new CustomEvent("StartNewRaid", {});
                 document.dispatchEvent(evt);
             break;
-            case "updateOptions":
+            case "UpdateOptions":
                 updateOptions(data);
             break;
         }
